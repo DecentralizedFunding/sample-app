@@ -14,6 +14,7 @@
           <p>目標金額 {{project.goal}} ETH</p>
           <p>支援額 {{project.amount}} ETH</p>
           <p>支援期限 {{project.limitTime}}</p>
+          <p><input v-model="pledge" placeholder="ETH"><button @click="depositToProject(project.id)">支援する</button></p>
         </div>
       </li>
     </ul>
@@ -35,6 +36,7 @@ export default {
     return {
       contractAddress: null,
       account: null,
+      pledge: 0,
       title: null,
       goal: null,
       date: null,
@@ -80,6 +82,8 @@ export default {
       .then((instance) => this.contractAddress = instance.address)
   },
   beforeMount () {
+    this.pledge = 0
+
     DFcore.deployed()
       .then((instance) => {
         var contract = instance
@@ -90,6 +94,7 @@ export default {
                 .then((project) => {
                   var date = new Date(project[3].toNumber())
                   this.projects.unshift({
+                    'id': i,
                     'title': project[0],
                     'goal': project[1].toNumber(),
                     'amount': project[2].toNumber(),
@@ -109,6 +114,15 @@ export default {
           instance.makePJ(this.title, this.goal, limit.getTime())
         })
         .catch((error) => console.error(error))
+    },
+    depositToProject (id) {
+      return DFcore.deployed()
+        .then((instance) => {
+          var value = web3.utils.toWei(this.pledge, 'ether')
+          console.log(value)
+          console.log(typeof(value))
+          instance.deposit(id, {gas: 300000, value: parseInt(value), from: this.account})
+        })
     }
   }
 }
