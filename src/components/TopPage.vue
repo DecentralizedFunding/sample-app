@@ -7,24 +7,20 @@
     <input v-model="goal" type="text" name="" value="" placeholder="目標金額 (ETH)">
     <input v-model="date" type="date" name="" value="">
     <button @click="buildProject">つくる</button>
-    <ul>
-      <li class="project-box" v-for="project in projects" :key="project">
-        <div>
-          <p id="title">{{project.title}}</p>
-          <p>目標金額 {{project.goal}} ETH</p>
-          <p>支援額 {{project.amount}} ETH</p>
-          <p>支援期限 {{project.limitTime}}</p>
-          <p><input v-model="pledge" placeholder="ETH"><button @click="depositToProject(project.id)">支援する</button></p>
-        </div>
-      </li>
-    </ul>
+    <div class="project-box" v-for="project in projects" :key="project.id">
+      <p id="title">{{project.id}}. {{project.title}}</p>
+      <p>目標金額 {{project.goal}} ETH</p>
+      <p>支援額 {{project.amount}} ETH</p>
+      <p>支援期限 {{project.limitTime}}</p>
+      <p><input v-model="pledge" placeholder="ETH"><button @click="depositInProject(project.id)">支援する</button></p>
+    </div>
     <p v-if="contractAddress">コントラクトアドレス: {{contractAddress}}</p>
     <p v-if="!contractAddress">コントラクトアドレスが見つからないよ</p>
   </div>
 </template>
 
 <script>
-// local
+/* eslint-disable */
 import Web3 from 'web3'
 import contract from 'truffle-contract'
 import artifacts from '../../build/contracts/DFcore.json'
@@ -45,38 +41,26 @@ export default {
   },
   created () {
     if (typeof web3 !== 'undefined') {
-      // eslint-disable-next-line
       web3 = new Web3(web3.currentProvider)
     } else {
       console.warn("No web3 detected. Falling back to http://127.0.0.1:7545. You should remove this fallback when you deploy live, as it's inherently insecure. Consider switching to Metamask for development. More info here: http://truffleframework.com/tutorials/truffle-and-metamask")
 
       // fallback - use your fallback strategy (local node / hosted node + in-dapp id mgmt / fail)
-      // eslint-disable-next-line
       web3 = new Web3(new Web3.providers.HttpProvider('http://127.0.0.1:7545'))
     }
 
-    // eslint-disable-next-line
     DFcore.setProvider(web3.currentProvider)
 
-    // eslint-disable-next-line
     web3.eth.getCoinbase()
       .then((coinbase) => {
         DFcore.defaults({from: coinbase})
       })
 
-    // eslint-disable-next-line
-    web3.eth.getAccounts((error, accounts) => {
-      if (error != null) {
-        console.error(error)
-        this.message = 'There was an error fetching your accounts. Do you have Metamask, Mist installed or an Ethereum node running? If not, you might want to look into that.'
-        return
-      }
-      if (accounts.length === 0) {
-        this.message = 'Couldn\'t get any accounts! Make sure your Ethereum client is configured correctly.'
-        return
-      }
+    web3.eth.getAccounts()
+    .then((accounts) => {
       this.account = accounts[0]
     })
+    .catch(console.log)
 
     DFcore.deployed()
       .then((instance) => this.contractAddress = instance.address)
@@ -88,22 +72,23 @@ export default {
       .then((instance) => {
         var contract = instance
         contract.getPJCount()
-          .then((count) => {
-            for (var i = 0; i < count.toNumber(); i++) {
-              contract.getPJInfo(i)
-                .then((project) => {
-                  var date = new Date(project[3].toNumber())
-                  this.projects.unshift({
-                    'id': i,
-                    'title': project[0],
-                    'goal': project[1].toNumber(),
-                    'amount': project[2].toNumber(),
-                    'limitTime': date.toDateString(),
-                    'supporters': project[4]
-                  })
+        .then((count) => {
+          for (var i = 0; i < count.toNumber(); i++) {
+            contract.getPJInfo(i)
+              .then((project) => {
+                var funded = web3.utils.fromWei(project[3].toString(), 'ether')
+                var date = new Date(project[4].toNumber())
+                this.projects.unshift({
+                  'id': project[0].toNumber(),
+                  'title': project[1],
+                  'goal': project[2].toNumber(),
+                  'amount': funded,
+                  'limitTime': date.toDateString(),
+                  'supporters': project[5]
                 })
-            }
-          })
+              })
+          }
+        })
       })
   },
   methods: {
@@ -115,13 +100,18 @@ export default {
         })
         .catch((error) => console.error(error))
     },
-    depositToProject (id) {
+    depositInProject (id) {
       return DFcore.deployed()
         .then((instance) => {
-          var value = web3.utils.toWei(this.pledge, 'ether')
-          console.log(value)
-          console.log(typeof(value))
-          instance.deposit(id, {gas: 300000, value: parseInt(value), from: this.account})
+          var contract = instance
+          // Metamask アカウントが変更されていればページをリロードする
+          web3.eth.getAccounts()
+            .then((accounts) => {
+              if (this.account !== accounts[0]) {
+                location.reload()
+              }
+            })
+            .then(() => contract.deposit(id, {gas: 300000, value: web3.utils.toWei(this.pledge), to: this.contractAddress}))
         })
     }
   }
