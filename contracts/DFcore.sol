@@ -4,6 +4,7 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 contract DFcore is Ownable {
 
   struct PJ {
+    uint id;
     string title;
     uint goal;
     uint amount;
@@ -24,8 +25,9 @@ contract DFcore is Ownable {
   function makePJ(string _title, uint _goal, uint _limittime) public {  // クラウドファンディングのETHを貯める箱を作る関数
     /* uint _limittime = now + 30 days; //とりあえずデフォルトで期限を30日と設定 */
     address[] memory _supportersArray;
-    uint id = PJs.push(PJ(_title,_goal, 0, _limittime, _supportersArray)) - 1;
-    PJToOwner[id] = msg.sender;
+    uint _id = PJs.length;
+    PJs.push(PJ(_id, _title, _goal, 0, _limittime, _supportersArray));
+    PJToOwner[_id] = msg.sender;
     ownerPJCount[msg.sender]++;
   }
 
@@ -70,8 +72,8 @@ contract DFcore is Ownable {
     return result;
   }
 
-  function getPJInfo(uint _id) public view returns(string, uint256, uint256, uint256, address[]) {
-    return (PJs[_id].title, PJs[_id].goal, PJs[_id].amount, PJs[_id].limittime, PJs[_id].supportersArray);
+  function getPJInfo(uint _id) public view returns(uint256, string, uint256, uint256, uint256, address[]) {
+    return (PJs[_id].id, PJs[_id].title, PJs[_id].goal, PJs[_id].amount, PJs[_id].limittime, PJs[_id].supportersArray);
   }
 
   function getPJFunds(uint _id, address _address) public view returns(uint256) {
