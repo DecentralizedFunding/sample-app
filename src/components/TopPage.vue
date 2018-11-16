@@ -24,7 +24,8 @@
 import Web3 from 'web3'
 import contract from 'truffle-contract'
 import artifacts from '../../build/contracts/DFcore.json'
-const DFcore = contract(artifacts)
+
+var DFcore = contract(artifacts)
 
 export default {
   name: 'TopPage',
@@ -32,11 +33,12 @@ export default {
     return {
       contractAddress: null,
       account: null,
-      pledge: 0,
+      hash: null,
+      pledge: null,
       title: null,
       goal: null,
       date: null,
-      projects: []
+      projects: [],
     }
   },
   created () {
@@ -52,15 +54,11 @@ export default {
     DFcore.setProvider(web3.currentProvider)
 
     web3.eth.getCoinbase()
-      .then((coinbase) => {
-        DFcore.defaults({from: coinbase})
-      })
+      .then((coinbase) => DFcore.defaults({from: coinbase}))
 
     web3.eth.getAccounts()
-    .then((accounts) => {
-      this.account = accounts[0]
-    })
-    .catch(console.log)
+      .then((accounts) => this.account = accounts[0])
+      .catch(console.log)
 
     DFcore.deployed()
       .then((instance) => this.contractAddress = instance.address)
@@ -68,25 +66,73 @@ export default {
   beforeMount () {
     this.pledge = 0
 
+    var contract
     DFcore.deployed()
       .then((instance) => {
-        var contract = instance
-        contract.getPJCount()
-        .then((count) => {
-          for (var i = 0; i < count.toNumber(); i++) {
-            contract.getPJInfo(i)
-              .then((project) => {
-                var funded = web3.utils.fromWei(project[3].toString(), 'ether')
-                var date = new Date(project[4].toNumber())
-                this.projects.unshift({
-                  'id': project[0].toNumber(),
-                  'title': project[1],
-                  'goal': project[2].toNumber(),
-                  'amount': funded,
-                  'limitTime': date.toDateString(),
-                  'supporters': project[5]
-                })
+        contract = instance
+        return contract.getPJCount()
+      })
+      .then((count) => {
+        for (var i = 0; i < count.toNumber(); i++) {
+          contract.getPJInfo(i)
+            .then((project) => {
+              // 1e21 対策
+              var goal = web3.utils.fromWei(web3.utils.toBN(project[2]), 'ether')
+              var funded = web3.utils.fromWei(web3.utils.toBN(project[3]), 'ether')
+              var date = new Date(project[4].toNumber())
+
+              this.projects.unshift({
+                'id': project[0].toNumber(),
+                'title': project[1],
+                'goal': goal,
+                'amount': funded,
+                'limitTime': date.toDateString(),
+                'supporters': project[5]
               })
+            })
+        }
+      })
+  },
+  mounted () {
+    DFcore.deployed()
+      .then((instance) => {
+        var createdProject = instance.NewPJ()
+        var deposit = instance.Deposit()
+
+        createdProject.watch((error, result) => {
+          if (!error) {
+            var project = result.args
+            if (project.id.toNumber() === this.projects.length) {
+              var goal = web3.utils.fromWei(web3.utils.toBN(project.goal), 'ether')
+              var funded = web3.utils.fromWei(web3.utils.toBN(project.amount), 'ether')
+              var date = new Date(project.limit.toNumber())
+
+              this.projects.unshift({
+                'id': project.id.toNumber(),
+                'title': project.title,
+                'goal': goal,
+                'amount': funded,
+                'limitTime': date.toDateString(),
+                'supporters': project.supporters
+              })
+
+              this.title = null
+              this.goal = null
+              this.date = null
+            }
+          }
+        })
+
+        deposit.watch((error, result) => {
+          if (!error) {
+            var project = result.args
+            var id = project.id.toNumber()
+            var funded = web3.utils.fromWei(web3.utils.toBN(project.funded))
+            var pledged = web3.utils.fromWei(web3.utils.toBN(project.pledged))
+            if (parseInt(this.projects[id].amount) === parseInt(funded) - parseInt(pledged)) {
+              this.projects[id].amount = funded
+              //this.$set(this.projects, id, funded)
+            }
           }
         })
       })
@@ -96,23 +142,28 @@ export default {
       var limit = new Date(this.date)
       return DFcore.deployed()
         .then((instance) => {
-          instance.makePJ(this.title, this.goal, limit.getTime())
+          this.checkAccount()
+          return instance.makePJ(this.title, web3.utils.toWei(this.goal, 'ether'), limit.getTime())
         })
         .catch((error) => console.error(error))
+    },
+    checkAccount () {
+      web3.eth.getAccounts()
+        .then((accounts) => {
+          // Metamask アカウントが変更されていればページをリロードする
+          if (this.account !== accounts[0]) {
+            location.reload()
+          }
+        })
     },
     depositInProject (id) {
       return DFcore.deployed()
         .then((instance) => {
-          var contract = instance
-          // Metamask アカウントが変更されていればページをリロードする
-          web3.eth.getAccounts()
-            .then((accounts) => {
-              if (this.account !== accounts[0]) {
-                location.reload()
-              }
-            })
-            .then(() => contract.deposit(id, {gas: 300000, value: web3.utils.toWei(this.pledge), to: this.contractAddress}))
+          this.checkAccount()
+          return instance.deposit(id, {gas: 300000, value: web3.utils.toWei(this.pledge)})
         })
+        .then(() => this.pledge = null)
+        .catch((error) => console.error(error))
     }
   }
 }
