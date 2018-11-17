@@ -1,20 +1,23 @@
 <template>
   <div class="app">
     <h2>POST YOUR IDEA</h2>
-    <p v-if="account">アカウント: {{account}}</p>
+    <p v-if="account">アカウント: {{ account }}</p>
     <p v-if="!account">アカウントが見つからないよ</p>
-    <input v-model="title" type="text" name="" value="" placeholder="プロジェクトの目的">
-    <input v-model="goal" type="text" name="" value="" placeholder="目標金額 (ETH)">
-    <input v-model="date" type="date" name="" value="">
-    <button @click="buildProject">つくる</button>
+    <router-link :to="{ name: 'StartProject' }">Start Project</router-link>
     <div class="project-box" v-for="project in projects" :key="project.id">
-      <p id="title">{{project.id}}. {{project.title}}</p>
-      <p>目標金額 {{project.goal}} ETH</p>
-      <p>支援額 {{project.amount}} ETH</p>
-      <p>支援期限 {{project.limitTime}}</p>
-      <p><input v-model="pledge" placeholder="ETH"><button @click="depositInProject(project.id)">支援する</button></p>
+      <router-link :to="{ name: 'Project', params: { projectId: project.id }}">
+        <div>
+          <p id="title">{{ project.id }}. {{ project.title }}</p>
+          <p>目標金額 {{ project.goal }} ETH</p>
+          <p>支援額 {{ project.amount }} ETH</p>
+          <p v-if="project.left.days > 0">残り {{ project.left.days }} 日</p>
+          <p v-else-if="project.left.hours > 0">残り {{ project.left.hours }} 時間</p>
+          <p v-else-if="project.left.mitunes >= 0">残り {{ project.left.mitunes }} 分</p>
+          <p v-else-if="project.left.minutes < 0">終了</p>
+        </div>
+      </router-link>
     </div>
-    <p v-if="contractAddress">コントラクトアドレス: {{contractAddress}}</p>
+    <p v-if="contractAddress">コントラクトアドレス: {{ contractAddress }}</p>
     <p v-if="!contractAddress">コントラクトアドレスが見つからないよ</p>
   </div>
 </template>
@@ -33,11 +36,6 @@ export default {
     return {
       contractAddress: null,
       account: null,
-      hash: null,
-      pledge: null,
-      title: null,
-      goal: null,
-      date: null,
       projects: [],
     }
   },
@@ -64,8 +62,6 @@ export default {
       .then((instance) => this.contractAddress = instance.address)
   },
   beforeMount () {
-    this.pledge = 0
-
     var contract
     DFcore.deployed()
       .then((instance) => {
@@ -79,92 +75,26 @@ export default {
               // 1e21 対策
               var goal = web3.utils.fromWei(web3.utils.toBN(project[2]), 'ether')
               var funded = web3.utils.fromWei(web3.utils.toBN(project[3]), 'ether')
-              var date = new Date(project[4].toNumber())
+              var unixTime = project[4].toNumber()
+              var date = new Date(unixTime)
+              var left = unixTime - Date.now()
 
               this.projects.unshift({
                 'id': project[0].toNumber(),
                 'title': project[1],
                 'goal': goal,
                 'amount': funded,
-                'limitTime': date.toDateString(),
-                'supporters': project[5]
+                'limitTime': date.toLocaleDateString('ja-JP'),
+                'supporters': project[5],
+                'left': {
+                  'days': Math.floor(left / (24 * 60 * 60 * 1000)),
+                  'hours': Math.floor(left / (60 * 60 * 1000)),
+                  'minutes': Math.floor(left / (60 * 1000))
+                }
               })
             })
         }
       })
-  },
-  mounted () {
-    DFcore.deployed()
-      .then((instance) => {
-        var createdProject = instance.NewPJ()
-        var deposit = instance.Deposit()
-
-        createdProject.watch((error, result) => {
-          if (!error) {
-            var project = result.args
-            if (project.id.toNumber() === this.projects.length) {
-              var goal = web3.utils.fromWei(web3.utils.toBN(project.goal), 'ether')
-              var funded = web3.utils.fromWei(web3.utils.toBN(project.amount), 'ether')
-              var date = new Date(project.limit.toNumber())
-
-              this.projects.unshift({
-                'id': project.id.toNumber(),
-                'title': project.title,
-                'goal': goal,
-                'amount': funded,
-                'limitTime': date.toDateString(),
-                'supporters': project.supporters
-              })
-
-              this.title = null
-              this.goal = null
-              this.date = null
-            }
-          }
-        })
-
-        deposit.watch((error, result) => {
-          if (!error) {
-            var project = result.args
-            var id = project.id.toNumber()
-            var funded = web3.utils.fromWei(web3.utils.toBN(project.funded))
-            var pledged = web3.utils.fromWei(web3.utils.toBN(project.pledged))
-            if (parseInt(this.projects[id].amount) === parseInt(funded) - parseInt(pledged)) {
-              this.projects[id].amount = funded
-              //this.$set(this.projects, id, funded)
-            }
-          }
-        })
-      })
-  },
-  methods: {
-    buildProject () {
-      var limit = new Date(this.date)
-      return DFcore.deployed()
-        .then((instance) => {
-          this.checkAccount()
-          return instance.makePJ(this.title, web3.utils.toWei(this.goal, 'ether'), limit.getTime())
-        })
-        .catch((error) => console.error(error))
-    },
-    checkAccount () {
-      web3.eth.getAccounts()
-        .then((accounts) => {
-          // Metamask アカウントが変更されていればページをリロードする
-          if (this.account !== accounts[0]) {
-            location.reload()
-          }
-        })
-    },
-    depositInProject (id) {
-      return DFcore.deployed()
-        .then((instance) => {
-          this.checkAccount()
-          return instance.deposit(id, {gas: 300000, value: web3.utils.toWei(this.pledge)})
-        })
-        .then(() => this.pledge = null)
-        .catch((error) => console.error(error))
-    }
   }
 }
 </script>
