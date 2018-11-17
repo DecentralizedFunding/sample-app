@@ -4,7 +4,7 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 contract DFcore is Ownable {
 
   event NewPJ(uint id, string title, uint goal, uint amount, uint limit, address[] supporters);
-  event Deposit(uint id, uint funded, uint pledged);
+  event Deposit(uint id, uint funded, uint pledged, address[] supporters);
 
   struct PJ {
     uint id;
@@ -41,7 +41,7 @@ contract DFcore is Ownable {
     PJs[_id].amount = PJs[_id].amount + msg.value;
     PJs[_id].supportersArray.push(msg.sender);
     PJs[_id].funds[msg.sender] += msg.value;
-    emit Deposit(PJs[_id].id, PJs[_id].amount, msg.value);
+    emit Deposit(PJs[_id].id, PJs[_id].amount, msg.value, PJs[_id].supportersArray);
   }
 
   function success_withdraw(uint _id) public onlyOwnerOf(_id) {  // 箱の中が満額以上の時のみ、PJ製作者がのみが実行してお金を引き出すことができる
