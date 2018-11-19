@@ -16,6 +16,7 @@
   "dependencies": {
     "dotenv": "^6.1.0",
     "express": "^4.16.4",
+    "firebase": "^5.5.8",
     "openzeppelin-solidity": "^2.0.0",
     "truffle": "^4.1.14",
     "truffle-contract": "^3.0.6",
