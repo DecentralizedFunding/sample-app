@@ -6,10 +6,10 @@
     <p>集まった金額 {{ funded }} ETH</p>
     <p>支援期限 {{ date }}</p>
     <p>{{ supporters }}</p>
-    <p v-if="canDeposit"><input v-model="pledge" placeholder="ETH"><button @click="depositInProject(id)">支援する</button></p>
-    <router-link :to="{ name: 'TopPage' }">
-      <p>← トップに戻る</p>
-    </router-link>
+    <div v-if="canDeposit">
+      <input v-model="pledge" placeholder="ETH"><button @click="depositInProject(id)">支援する</button>
+    </div>
+    <router-link :to="{ name: 'TopPage' }" tag="p">← トップに戻る</router-link>
   </div>
 </template>
 
@@ -25,12 +25,14 @@ export default {
   name: 'Project',
   data () {
     return {
+      account: null,
       id: null,
       title: null,
       goal: null,
       funded: null,
       date: null,
       supporters: [],
+      owner: null,
       // The amount of depositing by an user
       pledge: null,
       canDeposit: true
@@ -51,6 +53,10 @@ export default {
     web3.eth.getCoinbase()
       .then((coinbase) => DFcore.defaults({from: coinbase}))
 
+    web3.eth.getAccounts()
+      .then((accounts) => this.account = accounts[0])
+      .catch(console.log)
+
     var contract
     DFcore.deployed()
       .then((instance) => {
@@ -70,7 +76,19 @@ export default {
         this.funded = web3.utils.fromWei(web3.utils.toBN(project[3]))
         this.date = new Date(unixTime).toLocaleDateString('ja-JP')
         this.supporters = project[5]
+
+        return contract.PJToOwner(this.id)
       })
+      .then((owner) => this.owner = owner)
+
+    web3.currentProvider.publicConfigStore.on('update', (info) => {
+      this.account = info.selectedAddress
+      if (this.owner === this.account.toLowerCase()) {
+        this.canDeposit = false
+      } else {
+        this.canDeposit = true
+      }
+    })
   },
   mounted () {
     DFcore.deployed()
@@ -97,6 +115,7 @@ export default {
         .then((accounts) => {
           // Reload the page if the user switch Metamask account
           if (this.account !== accounts[0]) {
+            alert('アカウントが切り替わったため、再読み込みします')
             location.reload()
           }
         })

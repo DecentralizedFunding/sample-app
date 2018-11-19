@@ -1,6 +1,11 @@
 <template>
   <div class="app">
     <h2>Login page</h2>
+    <input v-model="email" type="email" name="" value="" placeholder="メールアドレス" required>
+    <input v-model="password" type="password" name="" value="" placeholder="パスワード" required>
+    <button @click="logIn" type="button" name="button">ログイン</button>
+    <p v-if="loginErrorMessage">{{ loginErrorMessage }}</p>
+    <router-link :to="{ name: 'TopPage' }" tag="p">← トップに戻る</router-link>
   </div>
 </template>
 
@@ -9,6 +14,7 @@
 import Web3 from 'web3'
 import contract from 'truffle-contract'
 import artifacts from '../../build/contracts/DFcore.json'
+import firebase from 'firebase'
 
 var DFcore = contract(artifacts)
 
@@ -16,6 +22,9 @@ export default {
   name: 'Login',
   data () {
     return {
+      email: null,
+      password: null,
+      loginErrorMessage: null
     }
   },
   created () {
@@ -41,7 +50,26 @@ export default {
       .then((instance) => this.contractAddress = instance.address)
   },
   methods: {
-
+    logIn () {
+      firebase.auth().signInWithEmailAndPassword(this.email, this.password)
+        .then((info) => this.$router.replace({ name: 'User', params: { userId: info.user.displayName }}))
+        .catch((error) => {
+          switch (error.code) {
+            case 'auth/invalid-email':
+              this.loginErrorMessage = 'メールアドレスが誤っています'
+              break
+            case 'auth/user-disabled':
+              this.loginErrorMessage = 'ユーザーは凍結されています'
+              break
+            case 'auth/user-not-found':
+              this.loginErrorMessage = 'ユーザーが見つかりません'
+              break
+            case 'auth/wrong-password':
+              this.loginErrorMessage = 'パスワードが誤っています'
+              break
+          }
+        })
+    }
   }
 }
 </script>

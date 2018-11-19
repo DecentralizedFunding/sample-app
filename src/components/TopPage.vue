@@ -1,20 +1,20 @@
 <template>
   <div class="app">
-    <h2>POST YOUR IDEA</h2>
+    <h2>Decentralized Funding</h2>
+    <router-link v-if="!isLoggedIn" :to="{ name: 'SignUp' }" tag="button">Sign up</router-link>
+    <router-link v-if="!isLoggedIn" :to="{ name: 'Login' }" tag="button">Log in</router-link>
     <p v-if="account">アカウント: {{ account }}</p>
     <p v-if="!account">アカウントが見つからないよ</p>
-    <router-link :to="{ name: 'StartProject' }">Start Project</router-link>
+    <router-link :to="{ name: 'StartProject' }" tag="button">Start Project</router-link>
     <div class="project-box" v-for="project in projects" :key="project.id">
-      <router-link :to="{ name: 'Project', params: { projectId: project.id }}">
-        <div>
-          <p id="title">{{ project.id }}. {{ project.title }}</p>
-          <p>目標金額 {{ project.goal }} ETH</p>
-          <p>支援額 {{ project.amount }} ETH</p>
-          <p v-if="project.left.days > 0">残り {{ project.left.days }} 日</p>
-          <p v-else-if="project.left.hours > 0">残り {{ project.left.hours }} 時間</p>
-          <p v-else-if="project.left.mitunes >= 0">残り {{ project.left.mitunes }} 分</p>
-          <p v-else-if="project.left.minutes < 0">終了</p>
-        </div>
+      <router-link :to="{ name: 'Project', params: { projectId: project.id }}" tag="div">
+        <p id="title">{{ project.id }}. {{ project.title }}</p>
+        <p>目標金額 {{ project.goal }} ETH</p>
+        <p>支援額 {{ project.amount }} ETH</p>
+        <p v-if="project.left.days > 0">残り {{ project.left.days }} 日</p>
+        <p v-else-if="project.left.hours > 0">残り {{ project.left.hours }} 時間</p>
+        <p v-else-if="project.left.mitunes >= 0">残り {{ project.left.mitunes }} 分</p>
+        <p v-else-if="project.left.minutes < 0">終了</p>
       </router-link>
     </div>
     <p v-if="contractAddress">コントラクトアドレス: {{ contractAddress }}</p>
@@ -37,6 +37,7 @@ export default {
       contractAddress: null,
       account: null,
       projects: [],
+      isLoggedIn: false
     }
   },
   created () {
@@ -57,6 +58,10 @@ export default {
     web3.eth.getAccounts()
       .then((accounts) => this.account = accounts[0])
       .catch(console.log)
+
+    web3.currentProvider.publicConfigStore.on('update', (info) => {
+      this.account = info.selectedAddress
+    })
 
     DFcore.deployed()
       .then((instance) => this.contractAddress = instance.address)

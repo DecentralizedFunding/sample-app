@@ -1,13 +1,11 @@
 <template>
   <div class="app">
     <h2>Create Project</h2>
-    <input v-model="title" type="text" name="" value="" placeholder="プロジェクトの目的">
-    <input v-model="goal" type="text" name="" value="" placeholder="目標金額 (ETH)">
-    <input v-model="date" type="date" name="" value="">
+    <input v-model="title" type="text" name="" value="" placeholder="プロジェクトの目的" required>
+    <input v-model="goal" type="text" name="" value="" placeholder="目標金額 (ETH)" required>
+    <input v-model="date" type="date" name="" value="" required>
     <button @click="startProject">つくる</button>
-    <router-link :to="{ name: 'TopPage' }">
-      <p>← トップに戻る</p>
-    </router-link>
+    <router-link :to="{ name: 'TopPage' }" tag="p">← トップに戻る</router-link>
   </div>
 </template>
 
@@ -47,6 +45,8 @@ export default {
       .then((accounts) => this.account = accounts[0])
       .catch(console.log)
 
+    web3.currentProvider.publicConfigStore.on('update', (info) => this.account = info.selectedAddress)
+
     DFcore.deployed()
       .then((instance) => this.contractAddress = instance.address)
   },
@@ -58,7 +58,7 @@ export default {
           if (!error && this.title !== null) {
             // Move to the project page after creating it
             var id = result.args.id.toNumber()
-            window.location.href = `${window.location.protocol}//${window.location.host}/project/${id}`
+            this.$router.replace({ name: 'Project', params: { projectId: id }})
           }
         })
       })
@@ -67,10 +67,11 @@ export default {
     checkAccount () {
       web3.eth.getAccounts()
         .then((accounts) => {
-          // Metamask アカウントが変更されていればページをリロードする
-          if (this.account !== accounts[0]) {
-            location.reload()
-          }
+        // Reload the page if the user switch Metamask account
+        if (this.account !== accounts[0]) {
+          alert('アカウントが切り替わったため、再読み込みします')
+          location.reload()
+        }
         })
     },
     startProject () {

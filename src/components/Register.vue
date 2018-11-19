@@ -1,7 +1,7 @@
 <template>
   <div class="app">
-    <h2>User page</h2>
-    <p>user: {{ userName }}</p>
+    <h2>Register page</h2>
+    <router-link :to="{ name: 'TopPage' }" tag="p">← トップに戻る</router-link>
   </div>
 </template>
 
@@ -16,13 +16,15 @@ import firebase from 'firebase'
 var DFcore = contract(artifacts)
 
 export default {
-  name: 'User',
+  name: 'Register',
   data () {
     return {
-      userName: null
     }
   },
   created () {
+    var user = firebase.auth().currentUser
+    console.log(user);
+
     if (typeof web3 !== 'undefined') {
       web3 = new Web3(web3.currentProvider)
     } else {
@@ -43,12 +45,6 @@ export default {
 
     DFcore.deployed()
       .then((instance) => this.contractAddress = instance.address)
-
-    var user = firebase.auth().currentUser
-    if (!user.emailVerified) {
-      // 確認メール再送信
-    }
-    this.userName = user.displayName
   },
   methods: {
 
