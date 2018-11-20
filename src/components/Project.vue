@@ -9,7 +9,7 @@
     <div v-if="canDeposit">
       <input v-model="pledge" placeholder="ETH"><button @click="depositInProject(id)">支援する</button>
     </div>
-    <router-link :to="{ name: 'TopPage' }" tag="p">← トップに戻る</router-link>
+    <router-link :to="{ name: 'TopPage' }">← トップに戻る</router-link>
   </div>
 </template>
 
