@@ -5,7 +5,7 @@
     <input v-model="password" type="password" name="" value="" placeholder="パスワード" required>
     <button @click="logIn" type="button" name="button">ログイン</button>
     <p v-if="loginErrorMessage">{{ loginErrorMessage }}</p>
-    <router-link :to="{ name: 'TopPage' }" tag="p">← トップに戻る</router-link>
+    <router-link :to="{ name: 'TopPage' }">← トップに戻る</router-link>
   </div>
 </template>
 
