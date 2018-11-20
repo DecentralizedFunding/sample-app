@@ -101,7 +101,7 @@ export default {
             var funded = web3.utils.fromWei(web3.utils.toBN(project.funded))
             var pledged = web3.utils.fromWei(web3.utils.toBN(project.pledged))
             // Check whether it is a new event or not
-            if (parseInt(this.funded) === parseInt(funded) - parseInt(pledged)) {
+            if (Number(this.funded) === Number(funded) - Number(pledged)) {
               this.funded = funded
               this.supporters = project.supporters
             }
