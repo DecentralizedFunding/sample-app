@@ -11,7 +11,7 @@
         <b-card img-src="https://placeimg.com/320/240/any" img-alt="Image" img-top tag="article">
           <h4>{{ project.title }}</h4>
           <p>目標金額 {{ project.goal }} ETH</p>
-          <p>支援額 {{ project.amount }} ETH</p>
+          <b-progress :value="project.funded" :max="project.goal" show-progress animated></b-progress>
           <p v-if="project.left.days > 0">残り {{ project.left.days }} 日</p>
           <p v-else-if="project.left.hours > 0">残り {{ project.left.hours }} 時間</p>
           <p v-else-if="project.left.mitunes >= 0">残り {{ project.left.mitunes }} 分</p>
@@ -92,8 +92,8 @@ export default {
               this.projects.unshift({
                 'id': project[0].toNumber(),
                 'title': project[1],
-                'goal': goal,
-                'amount': funded,
+                'goal': Number(goal),
+                'funded': Number(funded),
                 'limitTime': date.toLocaleDateString('ja-JP'),
                 'supporters': project[5],
                 'left': {
