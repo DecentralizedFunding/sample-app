@@ -1,7 +1,7 @@
 <template>
   <div class="app">
     <h2>Register page</h2>
-    <router-link :to="{ name: 'TopPage' }" tag="p">← トップに戻る</router-link>
+    <router-link :to="{ name: 'TopPage' }">← トップに戻る</router-link>
   </div>
 </template>
 
