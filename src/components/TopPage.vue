@@ -1,20 +1,22 @@
 <template>
   <div class="app">
     <h2>Decentralized Funding</h2>
-    <router-link v-if="!isLoggedIn" :to="{ name: 'SignUp' }" tag="button">Sign up</router-link>
-    <router-link v-if="!isLoggedIn" :to="{ name: 'Login' }" tag="button">Log in</router-link>
+    <b-button v-if="!isLoggedIn" :to="{ name: 'SignUp' }" size="sm" variant="outline-primary">Sign up</b-button>
+    <b-button v-if="!isLoggedIn" :to="{ name: 'Login' }" size="sm" variant="outline-primary">Log in</b-button>
     <p v-if="account">アカウント: {{ account }}</p>
     <p v-if="!account">アカウントが見つからないよ</p>
-    <router-link :to="{ name: 'StartProject' }" tag="button">Start Project</router-link>
-    <div class="project-box" v-for="project in projects" :key="project.id">
-      <router-link :to="{ name: 'Project', params: { projectId: project.id }}" tag="div">
-        <p id="title">{{ project.id }}. {{ project.title }}</p>
-        <p>目標金額 {{ project.goal }} ETH</p>
-        <p>支援額 {{ project.amount }} ETH</p>
-        <p v-if="project.left.days > 0">残り {{ project.left.days }} 日</p>
-        <p v-else-if="project.left.hours > 0">残り {{ project.left.hours }} 時間</p>
-        <p v-else-if="project.left.mitunes >= 0">残り {{ project.left.mitunes }} 分</p>
-        <p v-else-if="project.left.minutes < 0">終了</p>
+    <b-button :to="{ name: 'StartProject' }" variant="primary">Start Project</b-button>
+    <div class="project-box mx-auto" v-for="project in projects" :key="project.id">
+      <router-link :to="{ name: 'Project', params: { projectId: project.id }}">
+        <b-card img-src="https://placeimg.com/320/240/any" img-alt="Image" img-top tag="article">
+          <h4>{{ project.title }}</h4>
+          <p>目標金額 {{ project.goal }} ETH</p>
+          <p>支援額 {{ project.amount }} ETH</p>
+          <p v-if="project.left.days > 0">残り {{ project.left.days }} 日</p>
+          <p v-else-if="project.left.hours > 0">残り {{ project.left.hours }} 時間</p>
+          <p v-else-if="project.left.mitunes >= 0">残り {{ project.left.mitunes }} 分</p>
+          <p v-else-if="project.left.minutes < 0">終了</p>
+        </b-card>
       </router-link>
     </div>
     <p v-if="contractAddress">コントラクトアドレス: {{ contractAddress }}</p>
@@ -27,6 +29,9 @@
 import Web3 from 'web3'
 import contract from 'truffle-contract'
 import artifacts from '../../build/contracts/DFcore.json'
+
+import 'bootstrap/dist/css/bootstrap.css'
+import 'bootstrap-vue/dist/bootstrap-vue.css'
 
 var DFcore = contract(artifacts)
 
@@ -106,12 +111,21 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-.project-box {
-  border: 1px solid;
-  display: block;
-  margin: 0.5em auto;
-  padding: 0.5em;
+article, .project-box {
   width: 320px;
+}
+
+article:hover {
+  box-shadow: 0 0 2px 0 #007bff;
+}
+
+.project-box {
+  border: none;
+}
+
+.project-box a, .project-box *:hover {
+  color: inherit;
+  text-decoration: none;
 }
 
 .project-box #title {
