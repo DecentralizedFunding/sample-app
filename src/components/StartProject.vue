@@ -5,7 +5,7 @@
     <input v-model="goal" type="text" name="" value="" placeholder="目標金額 (ETH)" required>
     <input v-model="date" type="date" name="" value="" required>
     <button @click="startProject">つくる</button>
-    <router-link :to="{ name: 'TopPage' }" tag="p">← トップに戻る</router-link>
+    <router-link :to="{ name: 'TopPage' }">← トップに戻る</router-link>
   </div>
 </template>
 
