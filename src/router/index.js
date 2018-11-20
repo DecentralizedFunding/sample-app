@@ -1,5 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
+import BootstrapVue from 'bootstrap-vue'
+
 import Login from '@/components/Login'
 import Project from '@/components/Project'
 import Register from '@/components/Register'
@@ -9,6 +11,7 @@ import TopPage from '@/components/TopPage'
 import User from '@/components/User'
 
 Vue.use(Router)
+Vue.use(BootstrapVue)
 
 export default new Router({
   mode: 'history',
