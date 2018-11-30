@@ -64,9 +64,10 @@ export default {
         })
     },
     reSendEmailVerification () {
-      var user = firebase.auth().currentUser
-      user.sendEmailVerification()
-        .catch(console.error)
+      firebase.auth().onAuthStateChanged((user) => {
+        user.sendEmailVerification()
+          .catch(console.error)
+      })
     }
   }
 }
