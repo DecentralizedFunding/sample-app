@@ -1,6 +1,10 @@
 <template>
   <div class="app">
     <h2>Register page</h2>
+    <p>{{ userName }}</p>
+    <p>アドレス: <input v-model="address" type="text" name="" value="" placeholder="0x" required></p>
+    <p>Twitter: @<input v-model="twitter" type="text" name="" value="" placeholder="" required></p>
+    <p><button @click="register">登録</button></p>
     <router-link :to="{ name: 'TopPage' }">← トップに戻る</router-link>
   </div>
 </template>
@@ -11,7 +15,10 @@ import Web3 from 'web3'
 import contract from 'truffle-contract'
 import artifacts from '../../build/contracts/DFcore.json'
 
+import store from '../store'
+
 import firebase from 'firebase'
+import db from '../firebaseInit'
 
 var DFcore = contract(artifacts)
 
@@ -19,12 +26,12 @@ export default {
   name: 'Register',
   data () {
     return {
+      address: null,
+      twitter: null,
+      userName: null
     }
   },
   created () {
-    var user = firebase.auth().currentUser
-    console.log(user);
-
     if (typeof web3 !== 'undefined') {
       web3 = new Web3(web3.currentProvider)
     } else {
@@ -45,9 +52,24 @@ export default {
 
     DFcore.deployed()
       .then((instance) => this.contractAddress = instance.address)
+
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        this.userName = user.displayName
+      }
+    })
   },
   methods: {
-
+    register () {
+      if (this.userName) {
+        db.collection('users').doc(this.userName).set({
+          address: this.address,
+          twitter: this.twitter
+        })
+      } else {
+        this.$router.replace({ name: 'Login' })
+      }
+    }
   }
 }
 </script>
