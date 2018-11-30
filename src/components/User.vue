@@ -1,6 +1,7 @@
 <template>
   <div class="app">
     <h2>User page</h2>
+    <button v-if="needEmailVerification" @click="reSendEmailVerification">確認メール再送信</button>
     <p>user: {{ userName }}</p>
   </div>
 </template>
@@ -19,6 +20,7 @@ export default {
   name: 'User',
   data () {
     return {
+      needEmailVerification: false,
       userName: null
     }
   },
@@ -44,14 +46,18 @@ export default {
     DFcore.deployed()
       .then((instance) => this.contractAddress = instance.address)
 
-    var user = firebase.auth().currentUser
-    if (!user.emailVerified) {
-      // 確認メール再送信
-    }
-    this.userName = user.displayName
+    var user = firebase.auth().onAuthStateChanged((user) => {
+      this.needEmailVerification = !user.emailVerified
+      this.userName = user.displayName
+    })
   },
   methods: {
-
+    reSendEmailVerification () {
+      firebase.auth().onAuthStateChanged((user) => {
+        user.sendEmailVerification()
+          .catch(console.error)
+      })
+    }
   }
 }
 </script>
