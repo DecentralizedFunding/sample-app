@@ -6,7 +6,7 @@
     <p v-if="account">アカウント: {{ account }}</p>
     <p v-if="!account">アカウントが見つからないよ</p>
     <b-button :to="{ name: 'StartProject' }" variant="primary">Start Project</b-button>
-    <div class="project-box mx-auto" v-for="project in projects" :key="project.id">
+    <div class="project-box" v-for="project in projects" :key="project.id">
       <router-link :to="{ name: 'Project', params: { projectId: project.id }}">
         <b-card img-src="https://placeimg.com/320/240/any" img-alt="Image" img-top tag="article">
           <h4>{{ project.title }}</h4>

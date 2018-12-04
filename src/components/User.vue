@@ -13,6 +13,7 @@ import contract from 'truffle-contract'
 import artifacts from '../../build/contracts/DFcore.json'
 
 import firebase from 'firebase'
+import db from '../firebaseInit'
 
 var DFcore = contract(artifacts)
 

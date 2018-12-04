@@ -1,9 +1,11 @@
 <template>
   <div class="app">
     <h2>Login page</h2>
-    <input v-model="email" type="email" name="" value="" placeholder="メールアドレス" required>
-    <input v-model="password" type="password" name="" value="" placeholder="パスワード" required>
-    <button @click="logIn" type="button" name="button">ログイン</button>
+    <b-form inline class="mt-3 mb-3">
+      <b-form-input class="m-1" v-model="email" type="email" placeholder="メールアドレス" required></b-form-input>
+      <b-form-input class="m-1" v-model="password" type="password" placeholder="パスワード" required></b-form-input>
+      <b-button class="m-1" @click="logIn" variant="primary">ログイン</b-button>
+    </b-form>
     <p v-if="loginErrorMessage">{{ loginErrorMessage }}</p>
     <router-link :to="{ name: 'TopPage' }">← トップに戻る</router-link>
   </div>
@@ -14,7 +16,12 @@
 import Web3 from 'web3'
 import contract from 'truffle-contract'
 import artifacts from '../../build/contracts/DFcore.json'
+
+import 'bootstrap/dist/css/bootstrap.css'
+import 'bootstrap-vue/dist/bootstrap-vue.css'
+
 import firebase from 'firebase'
+import db from '../firebaseInit'
 
 var DFcore = contract(artifacts)
 
