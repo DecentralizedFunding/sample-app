@@ -4,7 +4,6 @@ import BootstrapVue from 'bootstrap-vue'
 
 import Login from '@/components/Login'
 import Project from '@/components/Project'
-import Register from '@/components/Register'
 import SignUp from '@/components/SignUp'
 import StartProject from '@/components/StartProject'
 import TopPage from '@/components/TopPage'
@@ -25,11 +24,6 @@ export default new Router({
       path: '/project/:projectId',
       name: 'Project',
       component: Project
-    },
-    {
-      path: '/register',
-      name: 'Register',
-      component: Register
     },
     {
       path: '/signup',
