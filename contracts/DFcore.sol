@@ -1,7 +1,28 @@
 pragma solidity ^0.4.23;
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "openzeppelin-solidity/contracts/token/ERC721/ERC721Full.sol";
 
-contract DFcore is Ownable {
+contract Crediential is ERC721Full {
+
+  constructor() public ERC721Full("DFCrediential", "DFC"){
+  }
+
+  uint256 internal nextTokenId = 0;
+
+  function mint(string _message) internal {
+    uint256 tokenId = nextTokenId;
+    nextTokenId = nextTokenId.add(1);
+    super._mint(msg.sender, tokenId);
+    super._setTokenURI(tokenId, _message);
+  }
+
+  function burn(uint256 _tokenId) external {
+    super._burn(msg.sender, _tokenId);
+  }
+
+}
+
+contract DFcore is Ownable,Crediential {
 
   event NewPJ(uint id, string title, uint goal, uint amount, uint limit, address[] supporters);
   event Deposit(uint id, uint funded, uint pledged, address[] supporters);
