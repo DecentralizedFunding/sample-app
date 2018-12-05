@@ -7,6 +7,7 @@
     <p><button @click="register">登録</button></p>
     <router-link :to="{ name: 'TopPage' }">← トップに戻る</router-link>
   </div>
+  <!-- aaaa -->
 </template>
 
 <script>
