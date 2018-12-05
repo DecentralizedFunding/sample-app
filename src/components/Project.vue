@@ -18,6 +18,9 @@
 import Web3 from 'web3'
 import contract from 'truffle-contract'
 import artifacts from '../../build/contracts/DFcore.json'
+import firebase from 'firebase'
+import db from '../firebaseInit'
+import { sha256, sha224 } from 'js-sha256'
 
 var DFcore = contract(artifacts)
 
@@ -121,10 +124,16 @@ export default {
         })
     },
     depositInProject (id) {
+      var json = [{"id":String(id),"pledge":String(web3.utils.toWei(this.pledge)),"supporter":this.account}]
+      var uri = sha256(JSON.stringify(json[0]))
       return DFcore.deployed()
         .then((instance) => {
           this.checkAccount()
-          return instance.deposit(id, {gas: 300000, value: web3.utils.toWei(this.pledge)})
+          return instance.deposit(id, uri, {gas: 1000000, value: web3.utils.toWei(this.pledge)})
+        }).then(() => {
+          return db.collection('nftdata').doc(uri).set({
+            Metadata: json
+          })
         })
         .then(() => this.pledge = null)
         .catch((error) => console.error(error))
