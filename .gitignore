@@ -9,7 +9,6 @@ yarn-error.log*
 selenium-debug.log
 truffle-config.js
 truffle.js
-decentralized-funding-3ec63ce003c5.json
 
 # Editor directories and files
 .env
