@@ -18,10 +18,6 @@
           <b-button v-else disabled>投稿</b-button>
         </b-input-group>
       </b-form-group>
-      <!--
-      <b-form-group v-if="isPost">
-        <b-button @click="verifyWithTwitter" variant="primary">投稿したので認証する</b-button>
-      </b-form-group>-->
       <b-form-group label="ウォレットアドレス">
         <b-form-input v-model="form.address" type="text" placeholder="ウォレットアドレス" required></b-form-input>
       </b-form-group>
@@ -45,8 +41,12 @@
       <p>{{ form.email }} に確認メールを送信しました。</p>
       <p>確認メールのリンクを開いてメールアドレスが有効になったら登録完了です。</p>
     </b-alert>
-    <b-button @click="reSendEmailVerification">再送信</b-button>
-    <b-link :to="{ name: 'User', params: {userId: form.userName}}">進む</b-link>
+    <div class="mx-auto" v-if="isSent">
+      <b-button @click="reSendEmailVerification">再送信</b-button>
+    </div>
+    <div class="mx-auto" v-if="isSent">
+      <b-link :to="{ name: 'User', params: {userId: form.userName}}">進む</b-link>
+    </div>
   </div>
 </template>
 
@@ -83,9 +83,11 @@ export default {
         twitterPass: '',
         userName: null,
       },
+      isDuplicate: false,
       isPost: false,
       isSent: false,
-      isVerified: false
+      isVerified: false,
+      tweetTime: null
     }
   },
   computed: {
@@ -108,59 +110,76 @@ export default {
         if (!this.isPost) {
           throw new Error('app/have-no-post')
         }
-        //throw new Error('firestore/username-already-in-use')
 
         var user
-        var expectedHash = sha256(this.form.twitter + this.form.twitterPass)
-        // Connect the server for authentication
-        axios.get('/tweet?user=' + this.form.twitter)
-        .then((response) => {
-          var returnedHash = response.data.result.substring(0, 64)
-          // If returned hash and expected hash is equal, return true
-          if (expectedHash === returnedHash) {
-            return true
-          } else {
-            throw new Error('app/failed-to-authentication')
-          }
-        })
-        .then((result) => {
-          this.isVerified = result
-          return firebase.auth().createUserWithEmailAndPassword(this.form.email, this.form.password)
-        })
-        .then(() => {
-          user = firebase.auth().currentUser
-          return user.updateProfile({displayName: this.form.userName})
-        })
-        .then(() => {
-          return db.collection('users').doc(user.uid).set({
-            address: this.form.address,
-            name: this.form.userName,
-            twitter: this.form.twitter,
-            twitterVerified: this.isVerified
+        db.collection('users').where('name', '==', this.form.userName)
+          .get()
+          .then((querySnapshot) => {
+            // Check whether username is duplicate or not
+            if (!querySnapshot.empty) {
+              throw new Error('firestore/username-already-in-use')
+            }
+            // Connect the server for authentication
+            return axios.get('/tweet?user=' + this.form.twitter)
           })
-        })
-        .then(() => {
-          return user.sendEmailVerification()
-        })
-        .then(() => this.isSent = true)
-        .catch((error) => {
-          switch (error.code) {
-            case 'auth/email-already-in-use':
-              this.errorMessage = 'このメールアドレスはすでに使われています'
-              break
-            case 'auth/invalid-email':
-              this.errorMessage = 'メールアドレスが正しくありません'
-              break
-            case 'auth/operation-not-allowed':
-              this.errorMessage = 'この操作は許可されていません'
-              break
-            case 'auth/weak-password':
-              this.errorMessage = 'パスワードが弱すぎます'
-              break
-            default:
-              console.error(error)
-          }
-        })
+          .then((response) => {
+            var expectedHash = sha256(this.form.twitter + this.form.twitterPass + this.tweetTime)
+            var returnedHash = response.data.result.substring(0, 64)
+            // If returned hash and expected hash is equal, return true
+            if (expectedHash === returnedHash) {
+              return true
+            } else {
+              throw new Error('app/failed-to-authentication')
+            }
+          })
+          .then((result) => {
+            this.isVerified = result
+            return firebase.auth().createUserWithEmailAndPassword(this.form.email, this.form.password)
+          })
+          .then(() => {
+            user = firebase.auth().currentUser
+            return user.updateProfile({displayName: this.form.userName})
+          })
+          .then(() => {
+            return db.collection('users').doc(user.uid).set({
+              address: this.form.address,
+              name: this.form.userName,
+              twitter: this.form.twitter,
+              twitterVerified: this.isVerified
+            })
+          })
+          .then(() => {
+            return user.sendEmailVerification()
+          })
+          .then(() => this.isSent = true)
+          .catch((error) => {
+            if (error.code !== undefined) {
+              switch (error.code) {
+                case 'auth/email-already-in-use':
+                  this.errorMessage = 'このメールアドレスはすでに使われています'
+                  break
+                case 'auth/invalid-email':
+                  this.errorMessage = 'メールアドレスが正しくありません'
+                  break
+                case 'auth/operation-not-allowed':
+                  this.errorMessage = 'この操作は許可されていません'
+                  break
+                case 'auth/weak-password':
+                  this.errorMessage = 'パスワードが弱すぎます'
+                  break
+                default:
+                  console.error(error)
+              }
+            } else {
+              switch (error.message) {
+                case 'firestore/username-already-in-use':
+                  this.errorMessage = 'このユーザー名はすでに使われています'
+                  break
+                default:
+                  console.error(error)
+              }
+            }
+          })
       } catch (error) {
         switch (error.message) {
           case 'app/have-no-post':
@@ -168,9 +187,6 @@ export default {
             break
           case 'app/failed-to-authentication':
             this.errorMessage = 'Twitter認証に失敗しました'
-            break
-          case 'firestore/username-already-in-use':
-            this.errorMessage = 'このユーザー名はすでに使われています'
             break
           default:
             console.error(error)
@@ -185,7 +201,8 @@ export default {
     },
     tweet () {
       this.isPost = true
-      var message = sha256(this.form.twitter + this.form.twitterPass)
+      this.tweetTime = Date.now()
+      var message = sha256(this.form.twitter + this.form.twitterPass + this.tweetTime)
       var url = 'https://twitter.com?status=' + message + '%0D%0A%23DecentralizedFunding'
       window.open(url)
     }
