@@ -134,6 +134,10 @@ export default {
           })
           .then((result) => {
             this.isVerified = result
+            return axios.get('/image?user=' + this.form.twitter)
+          })
+          .then((response) => {
+            var imageUrl = response.data.result.replace('normal', '200x200')
             return firebase.auth().createUserWithEmailAndPassword(this.form.email, this.form.password)
           })
           .then(() => {
