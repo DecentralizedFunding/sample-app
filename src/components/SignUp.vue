@@ -18,10 +18,6 @@
           <b-button v-else disabled>投稿</b-button>
         </b-input-group>
       </b-form-group>
-      <!--
-      <b-form-group v-if="isPost">
-        <b-button @click="verifyWithTwitter" variant="primary">投稿したので認証する</b-button>
-      </b-form-group>-->
       <b-form-group label="ウォレットアドレス">
         <b-form-input v-model="form.address" type="text" placeholder="ウォレットアドレス" required></b-form-input>
       </b-form-group>
@@ -45,8 +41,12 @@
       <p>{{ form.email }} に確認メールを送信しました。</p>
       <p>確認メールのリンクを開いてメールアドレスが有効になったら登録完了です。</p>
     </b-alert>
-    <b-button @click="reSendEmailVerification">再送信</b-button>
-    <b-link :to="{ name: 'User', params: {userId: form.userName}}">進む</b-link>
+    <div class="mx-auto" v-if="isSent">
+      <b-button @click="reSendEmailVerification">再送信</b-button>
+    </div>
+    <div class="mx-auto" v-if="isSent">
+      <b-link :to="{ name: 'User', params: {userId: form.userName}}">進む</b-link>
+    </div>
   </div>
 </template>
 
