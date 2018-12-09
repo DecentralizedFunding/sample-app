@@ -55,7 +55,7 @@ import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
 /* eslint-disable */
 import firebase from 'firebase'
-import db from '../firebaseInit'
+import { db, storage } from '../firebaseInit'
 
 import { sha256 } from 'js-sha256'
 
@@ -68,6 +68,8 @@ var axios = axiosBase.create({
   },
   responseType: 'json'
 })
+
+var storageRef = storage.ref()
 
 export default {
   name: 'SignUp',
@@ -89,6 +91,9 @@ export default {
       isVerified: false,
       tweetTime: null
     }
+  },
+  beforeCreate () {
+    // If the user already logged in, redirect user page
   },
   computed: {
     isSamePassword () {
@@ -112,6 +117,7 @@ export default {
         }
 
         var user
+        var profileImageRef
         db.collection('users').where('name', '==', this.form.userName)
           .get()
           .then((querySnapshot) => {
@@ -138,6 +144,34 @@ export default {
           })
           .then(() => {
             user = firebase.auth().currentUser
+            return axios.get('/image?user=' + this.form.twitter)
+          })
+          .then((response) => {
+            // Get from Twitter
+            var imageUrl = response.data.result.replace('normal', '200x200')
+            // Check file extension of profile image
+            var extension
+            if (imageUrl.search('\.jpg') !== -1) {
+              extension = 'jpg'
+            } else if (imageUrl.search('\.jpeg') !== -1) {
+              extension = 'jpeg'
+            } else if (imageUrl.search('\.png') !== -1) {
+              extension = 'png'
+            } else if (imageUrl.search('\.gif') !== -1) {
+              extension = 'gif'
+            } else {
+              throw new Error('app/unknown-file-extension')
+            }
+            // Create a reference to user's profile image
+            profileImageRef = storageRef.child(`images/users/${this.form.userName}.${extension}`)
+            return fetch(imageUrl)
+          })
+          .then((response) => {
+            return response.blob()
+          })
+          .then((blob) => {
+            profileImageRef.put(blob)
+            throw new Error('Uploaded')
             return user.updateProfile({displayName: this.form.userName})
           })
           .then(() => {
