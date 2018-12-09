@@ -149,8 +149,21 @@ export default {
           .then((response) => {
             // Get from Twitter
             var imageUrl = response.data.result.replace('normal', '200x200')
+            // Check file extension of profile image
+            var extension
+            if (imageUrl.search('\.jpg') !== -1) {
+              extension = 'jpg'
+            } else if (imageUrl.search('\.jpeg') !== -1) {
+              extension = 'jpeg'
+            } else if (imageUrl.search('\.png') !== -1) {
+              extension = 'png'
+            } else if (imageUrl.search('\.gif') !== -1) {
+              extension = 'gif'
+            } else {
+              throw new Error('app/unknown-file-extension')
+            }
             // Create a reference to user's profile image
-            profileImageRef = storageRef.child(`images/users/${this.form.userName}.png`)
+            profileImageRef = storageRef.child(`images/users/${this.form.userName}.${extension}`)
             return fetch(imageUrl)
           })
           .then((response) => {
