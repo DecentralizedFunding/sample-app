@@ -67,12 +67,6 @@ export default {
       .catch(console.error)
   },
   methods: {
-    reSendEmailVerification () {
-      firebase.auth().onAuthStateChanged((user) => {
-        user.sendEmailVerification()
-          .catch(console.error)
-      })
-    }
   }
 }
 </script>
