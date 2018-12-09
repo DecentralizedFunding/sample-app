@@ -22,6 +22,7 @@ export default {
   data () {
     return {
       needEmailVerification: false,
+      uid: null,
       userName: null
     }
   },
@@ -47,10 +48,24 @@ export default {
     DFcore.deployed()
       .then((instance) => this.contractAddress = instance.address)
 
-    var user = firebase.auth().onAuthStateChanged((user) => {
-      this.needEmailVerification = !user.emailVerified
-      this.userName = user.displayName
+    new Promise((resolve, reject) => {
+      firebase.auth().onAuthStateChanged((user) => {
+        this.needEmailVerification = !user.emailVerified
+        resolve(user.uid)
+      })
     })
+    .then((uid) => {
+      this.uid = uid
+      return db.collection('users').doc(this.uid).get()
+    })
+    .then((doc) => {
+      if (doc.exists) {
+        console.log(doc.data())
+      } else {
+        throw new Error('No such document.')
+      }
+    })
+    .catch(console.error)
   },
   methods: {
     reSendEmailVerification () {
