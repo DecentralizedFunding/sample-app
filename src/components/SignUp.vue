@@ -83,6 +83,7 @@ export default {
         twitterPass: '',
         userName: null,
       },
+      isDuplicate: false,
       isPost: false,
       isSent: false,
       isVerified: false
@@ -108,59 +109,76 @@ export default {
         if (!this.isPost) {
           throw new Error('app/have-no-post')
         }
-        //throw new Error('firestore/username-already-in-use')
 
         var user
-        var expectedHash = sha256(this.form.twitter + this.form.twitterPass)
-        // Connect the server for authentication
-        axios.get('/tweet?user=' + this.form.twitter)
-        .then((response) => {
-          var returnedHash = response.data.result.substring(0, 64)
-          // If returned hash and expected hash is equal, return true
-          if (expectedHash === returnedHash) {
-            return true
-          } else {
-            throw new Error('app/failed-to-authentication')
-          }
-        })
-        .then((result) => {
-          this.isVerified = result
-          return firebase.auth().createUserWithEmailAndPassword(this.form.email, this.form.password)
-        })
-        .then(() => {
-          user = firebase.auth().currentUser
-          return user.updateProfile({displayName: this.form.userName})
-        })
-        .then(() => {
-          return db.collection('users').doc(user.uid).set({
-            address: this.form.address,
-            name: this.form.userName,
-            twitter: this.form.twitter,
-            twitterVerified: this.isVerified
+        db.collection('users').where('name', '==', this.form.userName)
+          .get()
+          .then((querySnapshot) => {
+            // Check whether username is duplicate or not
+            if (!querySnapshot.empty) {
+              throw new Error('firestore/username-already-in-use')
+            }
+            // Connect the server for authentication
+            return axios.get('/tweet?user=' + this.form.twitter)
           })
-        })
-        .then(() => {
-          return user.sendEmailVerification()
-        })
-        .then(() => this.isSent = true)
-        .catch((error) => {
-          switch (error.code) {
-            case 'auth/email-already-in-use':
-              this.errorMessage = 'このメールアドレスはすでに使われています'
-              break
-            case 'auth/invalid-email':
-              this.errorMessage = 'メールアドレスが正しくありません'
-              break
-            case 'auth/operation-not-allowed':
-              this.errorMessage = 'この操作は許可されていません'
-              break
-            case 'auth/weak-password':
-              this.errorMessage = 'パスワードが弱すぎます'
-              break
-            default:
-              console.error(error)
-          }
-        })
+          .then((response) => {
+            var expectedHash = sha256(this.form.twitter + this.form.twitterPass)
+            var returnedHash = response.data.result.substring(0, 64)
+            // If returned hash and expected hash is equal, return true
+            if (expectedHash === returnedHash) {
+              return true
+            } else {
+              throw new Error('app/failed-to-authentication')
+            }
+          })
+          .then((result) => {
+            this.isVerified = result
+            return firebase.auth().createUserWithEmailAndPassword(this.form.email, this.form.password)
+          })
+          .then(() => {
+            user = firebase.auth().currentUser
+            return user.updateProfile({displayName: this.form.userName})
+          })
+          .then(() => {
+            return db.collection('users').doc(user.uid).set({
+              address: this.form.address,
+              name: this.form.userName,
+              twitter: this.form.twitter,
+              twitterVerified: this.isVerified
+            })
+          })
+          .then(() => {
+            return user.sendEmailVerification()
+          })
+          .then(() => this.isSent = true)
+          .catch((error) => {
+            if (error.code !== undefined) {
+              switch (error.code) {
+                case 'auth/email-already-in-use':
+                  this.errorMessage = 'このメールアドレスはすでに使われています'
+                  break
+                case 'auth/invalid-email':
+                  this.errorMessage = 'メールアドレスが正しくありません'
+                  break
+                case 'auth/operation-not-allowed':
+                  this.errorMessage = 'この操作は許可されていません'
+                  break
+                case 'auth/weak-password':
+                  this.errorMessage = 'パスワードが弱すぎます'
+                  break
+                default:
+                  console.error(error)
+              }
+            } else {
+              switch (error.message) {
+                case 'firestore/username-already-in-use':
+                  this.errorMessage = 'このユーザー名はすでに使われています'
+                  break
+                default:
+                  console.error(error)
+              }
+            }
+          })
       } catch (error) {
         switch (error.message) {
           case 'app/have-no-post':
@@ -168,9 +186,6 @@ export default {
             break
           case 'app/failed-to-authentication':
             this.errorMessage = 'Twitter認証に失敗しました'
-            break
-          case 'firestore/username-already-in-use':
-            this.errorMessage = 'このユーザー名はすでに使われています'
             break
           default:
             console.error(error)
