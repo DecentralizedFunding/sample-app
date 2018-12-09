@@ -61,7 +61,7 @@ import { sha256 } from 'js-sha256'
 
 var axiosBase = require('axios')
 var axios = axiosBase.create({
-  baseURL: 'http://localhost:3000',
+  baseURL: 'https://auth-for-df.herokuapp.com',
   header: {
     'Content-Type': 'application/json',
     'X-Requested-With': 'XMLHttpRequest'
