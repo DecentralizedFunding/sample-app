@@ -22,7 +22,7 @@ contract Crediential is ERC721Full {
 
 }
 
-contract DFcore is Ownable,Crediential {
+contract DFcore is Ownable, Crediential {
 
   event NewPJ(uint id, string title, uint goal, uint amount, uint limit, address[] supporters);
   event Deposit(uint id, uint funded, uint pledged, address[] supporters);
@@ -56,12 +56,13 @@ contract DFcore is Ownable,Crediential {
     emit NewPJ(_id, _title, _goal, 0, _limittime, _supportersArray);
   }
 
-  function deposit(uint _id) public payable { // 箱にETHを投げる関数
+  function deposit(uint _id, string _URI) public payable { // 箱にETHを投げる関数
     require(PJs[_id].amount < PJs[_id].goal);
     require(now <= PJs[_id].limittime);
     PJs[_id].amount = PJs[_id].amount + msg.value;
     PJs[_id].supportersArray.push(msg.sender);
     PJs[_id].funds[msg.sender] += msg.value;
+    mint(_URI);
     emit Deposit(PJs[_id].id, PJs[_id].amount, msg.value, PJs[_id].supportersArray);
   }
 
