@@ -86,7 +86,8 @@ export default {
       isDuplicate: false,
       isPost: false,
       isSent: false,
-      isVerified: false
+      isVerified: false,
+      tweetTime: null
     }
   },
   computed: {
@@ -122,7 +123,7 @@ export default {
             return axios.get('/tweet?user=' + this.form.twitter)
           })
           .then((response) => {
-            var expectedHash = sha256(this.form.twitter + this.form.twitterPass)
+            var expectedHash = sha256(this.form.twitter + this.form.twitterPass + this.tweetTime)
             var returnedHash = response.data.result.substring(0, 64)
             // If returned hash and expected hash is equal, return true
             if (expectedHash === returnedHash) {
@@ -200,7 +201,8 @@ export default {
     },
     tweet () {
       this.isPost = true
-      var message = sha256(this.form.twitter + this.form.twitterPass)
+      this.tweetTime = Date.now()
+      var message = sha256(this.form.twitter + this.form.twitterPass + this.tweetTime)
       var url = 'https://twitter.com?status=' + message + '%0D%0A%23DecentralizedFunding'
       window.open(url)
     }
