@@ -3,9 +3,12 @@ import 'firebase/firestore'
 import firebaseConfig from './firebaseConfig'
 
 var firebaseApp = firebase.initializeApp(firebaseConfig)
-var firestore = firebaseApp.firestore()
+var db = firebaseApp.firestore()
+var storage = firebaseApp.storage()
 
 var settings = {timestampsInSnapshots: true}
-firestore.settings(settings)
+db.settings(settings)
 
-export default firestore
+export {
+  db, storage
+}
