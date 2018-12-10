@@ -3,9 +3,10 @@
     <h2>Decentralized Funding</h2>
     <b-button v-if="!isLoggedIn" :to="{ name: 'SignUp' }" size="sm" variant="outline-primary">Sign up</b-button>
     <b-button v-if="!isLoggedIn" :to="{ name: 'Login' }" size="sm" variant="outline-primary">Log in</b-button>
+    <b-button v-else @click="signOut" variant="dark">Sign Out</b-button>
     <p v-if="account">アカウント: {{ account }}</p>
     <p v-if="!account">アカウントが見つからないよ</p>
-    <b-button :to="{ name: 'StartProject' }" variant="primary">Start Project</b-button>
+    <b-button v-if="isLoggedIn" :to="{ name: 'StartProject' }" variant="primary">Start Project</b-button>
     <div class="project-box" v-for="project in projects" :key="project.id">
       <router-link :to="{ name: 'Project', params: { projectId: project.id }}">
         <b-card img-src="https://placeimg.com/320/240/any" img-alt="Image" img-top tag="article">
@@ -33,6 +34,9 @@ import artifacts from '../../build/contracts/DFcore.json'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
 
+import firebase from 'firebase'
+import { db, storage } from '../firebaseInit'
+
 var DFcore = contract(artifacts)
 
 export default {
@@ -44,6 +48,13 @@ export default {
       projects: [],
       isLoggedIn: false
     }
+  },
+  beforeCreate () {
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        this.isLoggedIn = true
+      }
+    })
   },
   created () {
     if (typeof web3 !== 'undefined') {
@@ -105,6 +116,11 @@ export default {
             })
         }
       })
+  },
+  methods: {
+    signOut () {
+      firebase.auth().signOut()
+    }
   }
 }
 </script>
