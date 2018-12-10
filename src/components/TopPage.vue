@@ -120,6 +120,7 @@ export default {
   methods: {
     signOut () {
       firebase.auth().signOut()
+        .then(() => location.reload())
     }
   }
 }
