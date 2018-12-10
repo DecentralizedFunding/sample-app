@@ -6,10 +6,10 @@
     <b-button v-else @click="signOut" variant="dark">Sign Out</b-button>
     <p v-if="account">アカウント: {{ account }}</p>
     <p v-if="!account">アカウントが見つからないよ</p>
-    <b-button v-if="isLoggedIn" :to="{ name: 'StartProject' }" variant="primary">Start Project</b-button>
+    <b-button :to="{ name: 'StartProject' }" variant="primary">Start Project</b-button>
     <div class="project-box" v-for="project in projects" :key="project.id">
       <router-link :to="{ name: 'Project', params: { projectId: project.id }}">
-        <b-card img-src="https://placeimg.com/320/240/any" img-alt="Image" img-top tag="article">
+        <b-card img-src="`${project.image}`" img-alt="Image" img-top tag="article">
           <h4>{{ project.title }}</h4>
           <p>目標金額 {{ project.goal }} ETH</p>
           <b-progress :value="project.funded" :max="project.goal" show-progress animated></b-progress>
