@@ -47,6 +47,13 @@ export default {
       date: null,
     }
   },
+  beforeCreate () {
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        this.$router.replace({ name: 'TopPage' })
+      }
+    })
+  },
   created () {
     if (typeof web3 !== 'undefined') {
       web3 = new Web3(web3.currentProvider)
@@ -101,31 +108,45 @@ export default {
     startProject () {
       var limit = new Date(this.date)
       var contract
-      return DFcore.deployed()
-        .then((instance) => {
-          contract = instance
-          this.checkAccount()
-          return contract.makePJ(this.title, web3.utils.toWei(this.goal, 'ether'), limit.getTime())
-        })
-        .then(() => {
-          return contract.getPJCount()
-        })
-        .then((count) => {
-          var extension
-          switch (this.image.type) {
-            case 'image/jpeg':
-              extension = 'jpg'
-              break
-            case 'image/png':
-              extension = 'png'
-              break
-            default:
-              throw new Error('This type of image is not adapted')
-          }
-          var newImageRef = storageRef.child(`images/projects/${count}.${extension}`)
-          newImageRef.put(this.image)
-        })
-        .catch((error) => console.error(error))
+      var projectId
+
+      firebase.auth().onAuthStateChanged((user) => {
+        if (!user) {
+          this.$router.replace({ name: 'TopPage' })
+        }
+      })
+      .then(() => {
+        return DFcore.deployed()
+      })
+      .then((instance) => {
+        contract = instance
+        this.checkAccount()
+        return contract.makePJ(this.title, web3.utils.toWei(this.goal, 'ether'), limit.getTime())
+      })
+      .then(() => {
+        return contract.getPJCount()
+      })
+      .then((count) => {
+        projectId = count
+        var extension
+        switch (this.image.type) {
+          case 'image/jpeg':
+            extension = 'jpg'
+            break
+          case 'image/png':
+            extension = 'png'
+            break
+          default:
+            throw new Error('This type of image is not adapted')
+        }
+        var newImageRef = storageRef.child(`images/projects/${projectId}.${extension}`)
+        return newImageRef.put(this.image)
+      })
+      .then(() => {
+        return db.collection('projects').doc(projectId.toString())
+          .set({description: this.content})
+      })
+      .catch((error) => console.error(error))
     }
   }
 }
