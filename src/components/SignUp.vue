@@ -27,10 +27,9 @@
       </b-form-group>
       <b-form-group label="パスワード">
         <b-form-input v-model="form.password" type="password" placeholder="半角英数字6文字以上" required></b-form-input>
-        <b-form-invalid-feedback>パスワードは6文字以上必要です</b-form-invalid-feedback>
       </b-form-group>
       <b-form-group label="パスワード (確認)">
-        <b-form-input v-model="form.retypedPassword" type="password" placeholder="パスワード (確認)" required></b-form-input>
+        <b-form-input v-model="form.retypedPassword" type="password" :state="isSamePassword" placeholder="パスワード (確認)" required></b-form-input>
         <b-form-invalid-feedback>パスワードが一致しません</b-form-invalid-feedback>
       </b-form-group>
       <b-alert v-if="errorMessage" show variant="danger">{{ errorMessage }}</b-alert>
@@ -99,7 +98,8 @@ export default {
   },
   computed: {
     isSamePassword () {
-      return (this.form.password === this.form.retypedPassword && this.form.retypedPassword !== null) ? true : false
+      return this.form.retypedPassword === null ? null : this.form.password === this.form.retypedPassword ? true : false
+      //return (this.form.password === this.form.retypedPassword && this.form.retypedPassword !== null) ? true : false
     },
     isTwitterFormInput () {
       return (this.form.twitter !== '' && this.form.twitterPass !== '') ? true : false
