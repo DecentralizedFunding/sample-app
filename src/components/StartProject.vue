@@ -115,38 +115,38 @@ export default {
           this.$router.replace({ name: 'SignUp' })
         }
       })
-      .then(() => {
-        return DFcore.deployed()
-      })
-      .then((instance) => {
-        contract = instance
-        this.checkAccount()
-        return contract.makePJ(this.title, web3.utils.toWei(this.goal, 'ether'), limit.getTime())
-      })
-      .then(() => {
-        return contract.getPJCount()
-      })
-      .then((count) => {
-        projectId = count
-        var extension
-        switch (this.image.type) {
-          case 'image/jpeg':
-            extension = 'jpg'
-            break
-          case 'image/png':
-            extension = 'png'
-            break
-          default:
-            throw new Error('This type of image is not adapted')
-        }
-        var newImageRef = storageRef.child(`images/projects/${projectId}.${extension}`)
-        return newImageRef.put(this.image)
-      })
-      .then(() => {
-        return db.collection('projects').doc(projectId.toString())
-          .set({description: this.content})
-      })
-      .catch((error) => console.error(error))
+
+      DFcore.deployed()
+        .then((instance) => {
+          contract = instance
+          this.checkAccount()
+          return contract.makePJ(this.title, web3.utils.toWei(this.goal, 'ether'), limit.getTime())
+        })
+        .then(() => {
+          return contract.getPJCount()
+        })
+        .then((count) => {
+          projectId = count.toNumber() - 1
+          /*
+          var extension
+          switch (this.image.type) {
+            case 'image/jpeg':
+              extension = 'jpg'
+              break
+            case 'image/png':
+              extension = 'png'
+              break
+            default:
+              throw new Error('This type of image is not adapted')
+          }*/
+          var newImageRef = storageRef.child(`images/projects/${projectId}`)
+          return newImageRef.put(this.image)
+        })
+        .then(() => {
+          return db.collection('projects').doc(projectId.toString())
+            .set({description: this.content})
+        })
+        .catch((error) => console.error(error))
     }
   }
 }
