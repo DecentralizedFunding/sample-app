@@ -116,10 +116,11 @@ export default {
         }
       })
 
+      this.checkAccount()
+
       DFcore.deployed()
         .then((instance) => {
           contract = instance
-          this.checkAccount()
           return contract.makePJ(this.title, web3.utils.toWei(this.goal, 'ether'), limit.getTime())
         })
         .then(() => {
