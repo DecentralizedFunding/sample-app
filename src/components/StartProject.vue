@@ -50,7 +50,7 @@ export default {
   beforeCreate () {
     firebase.auth().onAuthStateChanged((user) => {
       if (!user) {
-        this.$router.replace({ name: 'TopPage' })
+        this.$router.replace({ name: 'SignUp' })
       }
     })
   },
@@ -112,7 +112,7 @@ export default {
 
       firebase.auth().onAuthStateChanged((user) => {
         if (!user) {
-          this.$router.replace({ name: 'TopPage' })
+          this.$router.replace({ name: 'SignUp' })
         }
       })
       .then(() => {
