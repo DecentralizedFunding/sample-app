@@ -9,7 +9,7 @@
     <b-button :to="{ name: 'StartProject' }" variant="primary">Start Project</b-button>
     <div class="project-box" v-for="project in projects" :key="project.id">
       <router-link :to="{ name: 'Project', params: { projectId: project.id }}">
-        <b-card img-src="`${project.image}`" img-alt="Image" img-top tag="article">
+        <b-card :img-src="`${project.image}`" img-alt="Image" img-top tag="article">
           <h4>{{ project.title }}</h4>
           <p>目標金額 {{ project.goal }} ETH</p>
           <b-progress :value="project.funded" :max="project.goal" show-progress animated></b-progress>
@@ -38,6 +38,8 @@ import firebase from 'firebase'
 import { db, storage } from '../firebaseInit'
 
 var DFcore = contract(artifacts)
+
+var storageRef = storage.ref()
 
 export default {
   name: 'TopPage',
@@ -84,36 +86,54 @@ export default {
   },
   beforeMount () {
     var contract
+    var projectLength
+    var urls
     DFcore.deployed()
       .then((instance) => {
         contract = instance
         return contract.getPJCount()
       })
       .then((count) => {
-        for (var i = 0; i < count.toNumber(); i++) {
-          contract.getPJInfo(i)
-            .then((project) => {
-              // 1e21 対策
-              var goal = web3.utils.fromWei(web3.utils.toBN(project[2]), 'ether')
-              var funded = web3.utils.fromWei(web3.utils.toBN(project[3]), 'ether')
-              var unixTime = project[4].toNumber()
-              var date = new Date(unixTime)
-              var left = unixTime - Date.now()
+        projectLength = count.toNumber()
+        var promises = []
+        for (var i = 0; i < projectLength; i++) {
+          promises.push(storageRef.child(`images/projects/${i}`).getDownloadURL())
+        }
+        return Promise.all(promises)
+      })
+      .then((response) => {
+        urls = response
+      })
+      .then((count) => {
+        var promises = []
+        for (var i = 0; i < projectLength; i++) {
+          promises.push(contract.getPJInfo(i))
+        }
+        return Promise.all(promises)
+      })
+      .then((projects) => {
+        for (var i = 0; i < projectLength; i++) {
+          // 1e21 対策
+          var goal = web3.utils.fromWei(web3.utils.toBN(projects[i][2]), 'ether')
+          var funded = web3.utils.fromWei(web3.utils.toBN(projects[i][3]), 'ether')
+          var unixTime = projects[i][4].toNumber()
+          var date = new Date(unixTime)
+          var left = unixTime - Date.now()
 
-              this.projects.unshift({
-                'id': project[0].toNumber(),
-                'title': project[1],
-                'goal': Number(goal),
-                'funded': Number(funded),
-                'limitTime': date.toLocaleDateString('ja-JP'),
-                'supporters': project[5],
-                'left': {
-                  'days': Math.floor(left / (24 * 60 * 60 * 1000)),
-                  'hours': Math.floor(left / (60 * 60 * 1000)),
-                  'minutes': Math.floor(left / (60 * 1000))
-                }
-              })
-            })
+          this.projects.unshift({
+            'id': projects[i][0].toNumber(),
+            'image': urls[i],
+            'title': projects[i][1],
+            'goal': Number(goal),
+            'funded': Number(funded),
+            'limitTime': date.toLocaleDateString('ja-JP'),
+            'supporters': projects[i][5],
+            'left': {
+              'days': Math.floor(left / (24 * 60 * 60 * 1000)),
+              'hours': Math.floor(left / (60 * 60 * 1000)),
+              'minutes': Math.floor(left / (60 * 1000))
+            }
+          })
         }
       })
   },
