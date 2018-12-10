@@ -99,7 +99,6 @@ export default {
   computed: {
     isSamePassword () {
       return this.form.retypedPassword === null ? null : this.form.password === this.form.retypedPassword ? true : false
-      //return (this.form.password === this.form.retypedPassword && this.form.retypedPassword !== null) ? true : false
     },
     isTwitterFormInput () {
       return (this.form.twitter !== '' && this.form.twitterPass !== '') ? true : false
