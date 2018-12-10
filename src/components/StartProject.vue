@@ -1,10 +1,24 @@
 <template>
   <div class="app">
     <h2>Create Project</h2>
-    <input v-model="title" type="text" name="" value="" placeholder="プロジェクトの目的" required>
-    <input v-model="goal" type="text" name="" value="" placeholder="目標金額 (ETH)" required>
-    <input v-model="date" type="date" name="" value="" required>
-    <button @click="startProject">つくる</button>
+    <b-form class="mx-auto" style="width: 320px;" @submit="onSubmit">
+      <b-form-group label="アイキャッチ画像">
+        <b-form-file v-model="image" accept=".jpg, .png" placeholder="JPG または PNG" required></b-form-file>
+      </b-form-group>
+      <b-form-group label="タイトル">
+        <b-form-input v-model="title" type="text" placeholder="タイトル (目的)" required></b-form-input>
+      </b-form-group>
+      <b-form-group label="やりたいこと">
+        <b-form-input v-model="content" type="text" placeholder="説明文" required></b-form-input>
+      </b-form-group>
+      <b-form-group label="目標金額">
+        <b-form-input v-model="goal" type="text" placeholder="ETH" required></b-form-input>
+      </b-form-group>
+      <b-form-group label="期限">
+        <b-form-input v-model="date" type="date" required></b-form-input>
+      </b-form-group>
+      <b-button @click="startProject" type="submit">つくる</b-button>
+    </b-form>
     <router-link :to="{ name: 'TopPage' }">← トップに戻る</router-link>
   </div>
 </template>
@@ -17,13 +31,20 @@ import artifacts from '../../build/contracts/DFcore.json'
 
 var DFcore = contract(artifacts)
 
+import firebase from 'firebase'
+import { db, storage } from '../firebaseInit'
+
+var storageRef = storage.ref()
+
 export default {
   name: 'CreateProject',
   data () {
     return {
+      image: null,
       title: null,
+      content: null,
       goal: null,
-      date: null
+      date: null,
     }
   },
   created () {
@@ -64,6 +85,9 @@ export default {
       })
   },
   methods: {
+    onSubmit (event) {
+      event.preventDefault()
+    },
     checkAccount () {
       web3.eth.getAccounts()
         .then((accounts) => {
@@ -76,10 +100,30 @@ export default {
     },
     startProject () {
       var limit = new Date(this.date)
+      var contract
       return DFcore.deployed()
         .then((instance) => {
+          contract = instance
           this.checkAccount()
-          return instance.makePJ(this.title, web3.utils.toWei(this.goal, 'ether'), limit.getTime())
+          return contract.makePJ(this.title, web3.utils.toWei(this.goal, 'ether'), limit.getTime())
+        })
+        .then(() => {
+          return contract.getPJCount()
+        })
+        .then((count) => {
+          var extension
+          switch (this.image.type) {
+            case 'image/jpeg':
+              extension = 'jpg'
+              break
+            case 'image/png':
+              extension = 'png'
+              break
+            default:
+              throw new Error('This type of image is not adapted')
+          }
+          var newImageRef = storageRef.child(`images/projects/${count}.${extension}`)
+          newImageRef.put(this.image)
         })
         .catch((error) => console.error(error))
     }
