@@ -50,8 +50,7 @@ export default {
     DFcore.deployed()
       .then((instance) => this.contractAddress = instance.address)
 
-
-    return db.collection('users').where('name', '==', this.$route.path.split('/').pop())
+    return db.collection('users').where('name', '==', this.$route.params.userId)
       .get()
       .then((querySnapshot) => {
         if (!querySnapshot.empty) {

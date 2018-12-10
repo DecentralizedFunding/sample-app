@@ -11,7 +11,7 @@
           <b-form-input v-model="form.twitter" type="text" :readonly="isPost" placeholder="Twitterアカウント" required></b-form-input>
         </b-input-group>
       </b-form-group>
-      <b-form-group label="認証用パスワード" description="アカウント認証に使うパスワード" v-if="!isPost">
+      <b-form-group label="認証用パスワード" description="アカウント認証に使うパスワード">
         <b-input-group>
           <b-form-input class="mr-1" v-model="form.twitterPass" type="password" :readonly="isPost" placeholder="認証用パスワード" required></b-form-input>
           <b-button v-if="isTwitterFormInput" @click="tweet" variant="primary">投稿</b-button>
@@ -34,8 +34,10 @@
         <b-form-invalid-feedback>パスワードが一致しません</b-form-invalid-feedback>
       </b-form-group>
       <b-alert v-if="errorMessage" show variant="danger">{{ errorMessage }}</b-alert>
-      <b-button v-if="isSamePassword" @click="registerUser" type="submit" variant="primary">登録</b-button>
-      <b-button v-else disabled variant="secondary">登録</b-button>
+      <div v-if="!isSent">
+        <b-button v-if="isSamePassword" @click="registerUser" type="submit" variant="primary">登録</b-button>
+        <b-button v-else disabled variant="secondary">登録</b-button>
+      </div>
     </b-form>
     <b-alert v-if="isSent" show variant="success">
       <p>{{ form.email }} に確認メールを送信しました。</p>
@@ -170,9 +172,16 @@ export default {
             return response.blob()
           })
           .then((blob) => {
-            profileImageRef.put(blob)
-            throw new Error('Uploaded')
-            return user.updateProfile({displayName: this.form.userName})
+            return profileImageRef.put(blob)
+          })
+          .then(() => {
+            return profileImageRef.getDownloadURL()
+          })
+          .then((url) => {
+            return user.updateProfile({
+              displayName: this.form.userName,
+              photoURL: url
+            })
           })
           .then(() => {
             return db.collection('users').doc(user.uid).set({
@@ -202,7 +211,7 @@ export default {
                   this.errorMessage = 'パスワードが弱すぎます'
                   break
                 default:
-                  console.error(error)
+                  this.errorMessage = error
               }
             } else {
               switch (error.message) {
@@ -210,7 +219,7 @@ export default {
                   this.errorMessage = 'このユーザー名はすでに使われています'
                   break
                 default:
-                  console.error(error)
+                  this.errorMessage = error
               }
             }
           })
@@ -223,7 +232,7 @@ export default {
             this.errorMessage = 'Twitter認証に失敗しました'
             break
           default:
-            console.error(error)
+            this.errorMessage = error
         }
       }
     },
