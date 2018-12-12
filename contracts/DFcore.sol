@@ -59,6 +59,7 @@ contract DFcore is Ownable, Crediential {
   function deposit(uint _id, string _URI) public payable { // 箱にETHを投げる関数
     require(PJs[_id].amount < PJs[_id].goal);
     require(now <= PJs[_id].limittime);
+    require(msg.sender != PJToOwner[_id]);
     PJs[_id].amount = PJs[_id].amount + msg.value;
     PJs[_id].supportersArray.push(msg.sender);
     PJs[_id].funds[msg.sender] += msg.value;
