@@ -1,7 +1,7 @@
 <template>
   <div class="app">
     <h2>User page</h2>
-    <button v-if="needEmailVerification" @click="reSendEmailVerification">確認メール再送信</button>
+    <b-link :href="`https://twitter.com/${twitter}`">@{{ twitter }}</b-link>
     <p>user: {{ userName }}</p>
   </div>
 </template>
@@ -12,8 +12,11 @@ import Web3 from 'web3'
 import contract from 'truffle-contract'
 import artifacts from '../../build/contracts/DFcore.json'
 
+import 'bootstrap/dist/css/bootstrap.css'
+import 'bootstrap-vue/dist/bootstrap-vue.css'
+
 import firebase from 'firebase'
-import db from '../firebaseInit'
+import { db, storage } from '../firebaseInit'
 
 var DFcore = contract(artifacts)
 
@@ -21,7 +24,7 @@ export default {
   name: 'User',
   data () {
     return {
-      needEmailVerification: false,
+      twitter: null,
       userName: null
     }
   },
@@ -47,18 +50,22 @@ export default {
     DFcore.deployed()
       .then((instance) => this.contractAddress = instance.address)
 
-    var user = firebase.auth().onAuthStateChanged((user) => {
-      this.needEmailVerification = !user.emailVerified
-      this.userName = user.displayName
-    })
+    db.collection('users').where('name', '==', this.$route.params.userId)
+      .get()
+      .then((querySnapshot) => {
+        if (!querySnapshot.empty) {
+          querySnapshot.forEach((doc) => {
+            var data = doc.data()
+            this.twitter = data.twitter
+            this.userName = data.name
+          })
+        } else {
+          throw new Error('No such document.')
+        }
+      })
+      .catch(console.error)
   },
   methods: {
-    reSendEmailVerification () {
-      firebase.auth().onAuthStateChanged((user) => {
-        user.sendEmailVerification()
-          .catch(console.error)
-      })
-    }
   }
 }
 </script>
