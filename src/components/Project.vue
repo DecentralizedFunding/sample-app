@@ -11,7 +11,7 @@
     <div v-if="canDeposit">
       <b-form inline>
         <b-form-input v-model="pledge" placeholder="ETH"></b-form-input>
-        <b-button @click="depositInProject(id)" variant="primary">支援する</b-button>
+        <b-button @click="depositInProject(project.id)" variant="primary">支援する</b-button>
       </b-form>
     </div>
     <router-link :to="{ name: 'TopPage' }">← トップに戻る</router-link>
