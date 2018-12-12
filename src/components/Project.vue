@@ -9,6 +9,9 @@
     <div v-if="canDeposit">
       <input v-model="pledge" placeholder="ETH"><button @click="depositInProject(id)">支援する</button>
     </div>
+    <div v-if="!canDeposit&(goal<funded)">
+      <b-button>引き出す</b-button>
+    </div>
     <router-link :to="{ name: 'TopPage' }">← トップに戻る</router-link>
   </div>
 </template>
@@ -137,6 +140,12 @@ export default {
         })
         .then(() => this.pledge = null)
         .catch((error) => console.error(error))
+    },
+    success_withdraw (id) {
+      return DFcore.deployed()
+        .then((instancd) => {
+          this
+        })
     }
   }
 }
