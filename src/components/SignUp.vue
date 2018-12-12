@@ -18,7 +18,7 @@
           <b-button v-else disabled>投稿</b-button>
         </b-input-group>
       </b-form-group>
-      <b-form-group label="ウォレットアドレス">
+      <b-form-group label="ウォレットアドレス" description="プロジェクト作成用に登録するウォレットアドレス">
         <b-form-input v-model="form.address" type="text" placeholder="ウォレットアドレス" required></b-form-input>
       </b-form-group>
       <b-form-group label="メールアドレス">
@@ -52,6 +52,8 @@
 </template>
 
 <script>
+import Web3 from 'web3'
+
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
 /* eslint-disable */
@@ -95,6 +97,11 @@ export default {
   },
   beforeCreate () {
     // If the user already logged in, redirect user page
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        this.$router.replace({ name: 'User', params: {'userId': user.displayName}})
+      }
+    })
   },
   computed: {
     isSamePassword () {
@@ -103,6 +110,20 @@ export default {
     isTwitterFormInput () {
       return (this.form.twitter !== '' && this.form.twitterPass !== '') ? true : false
     }
+  },
+  created () {
+    if (typeof web3 !== 'undefined') {
+      web3 = new Web3(web3.currentProvider)
+    } else {
+      console.warn("No web3 detected. Falling back to http://127.0.0.1:7545. You should remove this fallback when you deploy live, as it's inherently insecure. Consider switching to Metamask for development. More info here: http://truffleframework.com/tutorials/truffle-and-metamask")
+
+      // fallback - use your fallback strategy (local node / hosted node + in-dapp id mgmt / fail)
+      web3 = new Web3(new Web3.providers.HttpProvider('http://127.0.0.1:7545'))
+    }
+
+    web3.eth.getAccounts()
+      .then((accounts) => this.form.address = accounts[0])
+      .catch(console.log)
   },
   methods: {
     onSubmit (event) {
