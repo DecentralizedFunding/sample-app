@@ -72,7 +72,7 @@ export default {
           alert('アカウントが切り替わったため、再読み込みします')
           location.reload()
         }
-        })
+      })
     },
     startProject () {
       var limit = new Date(this.date)
