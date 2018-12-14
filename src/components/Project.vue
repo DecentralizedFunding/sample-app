@@ -2,19 +2,19 @@
   <div class="app">
     <h2>Project page</h2>
     <h3>{{ project.title }}</h3>
-    <b-img-lazy :src="`${project.image}`" width="400" blank-color="#bbb" alt="Project image" />
+    <b-img :src="`${project.image}`" width="320" height="240" blank-color="#bbb" fluid alt="Project image" />
     <p>{{ project.description }}</p>
     <p>目標金額 {{ project.goal }} ETH</p>
     <p>集まった金額 {{ project.funded }} ETH</p>
     <p>支援期限 {{ project.date }}</p>
-    <p v-if="project.supporters.length > 0">{{ project.supporters }}</p>
-    <div v-if="canDeposit">
+    <p v-show="project.supporters.length > 0">{{ project.supporters }}</p>
+    <div v-show="canDeposit">
       <b-form inline>
         <b-form-input v-model="pledge" placeholder="ETH"></b-form-input>
         <b-button @click="depositInProject(project.id)" variant="primary">支援する</b-button>
       </b-form>
     </div>
-    <router-link :to="{ name: 'TopPage' }">← トップに戻る</router-link>
+    <b-link :to="{ name: 'TopPage' }">← トップに戻る</b-link>
   </div>
 </template>
 
@@ -69,7 +69,7 @@ export default {
 
     web3.eth.getAccounts()
       .then((accounts) => this.account = accounts[0])
-      .catch(console.log)
+      .catch(console.error)
 
     var contract
     DFcore.deployed()
@@ -94,6 +94,7 @@ export default {
         return contract.PJToOwner(this.project.id)
       })
       .then((owner) => {
+        this.canDeposit = owner === this.account.toLowerCase() ? false : true
         this.project.owner = owner
         return db.collection('projects').doc(this.project.id.toString()).get()
       })
@@ -106,11 +107,7 @@ export default {
 
     web3.currentProvider.publicConfigStore.on('update', (info) => {
       this.account = info.selectedAddress
-      if (this.project.owner === this.account.toLowerCase()) {
-        this.canDeposit = false
-      } else {
-        this.canDeposit = true
-      }
+      this.canDeposit = this.project.owner === this.account.toLowerCase() ? false : true
     })
   },
   mounted () {
