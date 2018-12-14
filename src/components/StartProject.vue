@@ -21,7 +21,7 @@
       <b-button v-else variant="secondary" disabled>つくる</b-button>
       <b-alert v-if="errorMessage" show variant="danger">{{ errorMessage }}</b-alert>
     </b-form>
-    <router-link :to="{ name: 'TopPage' }">← トップに戻る</router-link>
+    <b-link :to="{ name: 'TopPage' }">← トップに戻る</b-link>
   </div>
 </template>
 
@@ -56,17 +56,13 @@ export default {
   },
   computed: {
     isFormFilled () {
-      if (this.form.image !== null && this.form.title !== null && this.form.content !== null && this.form.goal !== null && this.form.date !== null) {
-        return true
-      } else {
-        return false
-      }
+      return (this.form.image !== null && this.form.title !== null && this.form.content !== null && this.form.goal !== null && this.form.date !== null) ? true : false
     }
   },
   beforeCreate () {
     firebase.auth().onAuthStateChanged((user) => {
       if (!user) {
-        this.$router.replace({ name: 'SignUp' })
+        this.$router.replace({ name: 'Login' })
       }
     })
   },
@@ -94,6 +90,7 @@ export default {
     DFcore.deployed()
       .then((instance) => this.contractAddress = instance.address)
   },
+  /*
   mounted () {
     DFcore.deployed()
       .then((instance) => {
@@ -106,7 +103,7 @@ export default {
           }
         })
       })
-  },
+  },*/
   methods: {
     onSubmit (event) {
       event.preventDefault()
@@ -129,7 +126,7 @@ export default {
 
       firebase.auth().onAuthStateChanged((user) => {
         if (!user) {
-          this.$router.replace({ name: 'SignUp' })
+          this.$router.replace({ name: 'Login' })
         } else {
           uid = user.uid
         }
@@ -176,6 +173,7 @@ export default {
           return db.collection('projects').doc(projectId.toString())
             .set({description: this.form.content})
         })
+        .then(() => this.$router.replace({ name: 'Project', params: { projectId: projectId }}))
         .catch((error) => console.error(error))
     }
   }
