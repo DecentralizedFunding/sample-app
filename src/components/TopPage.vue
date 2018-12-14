@@ -1,9 +1,14 @@
 <template>
   <div class="app">
     <h2>Decentralized Funding</h2>
-    <b-button v-if="!isLoggedIn" :to="{ name: 'SignUp' }" size="sm" variant="outline-primary">Sign up</b-button>
-    <b-button v-if="!isLoggedIn" :to="{ name: 'Login' }" size="sm" variant="outline-primary">Log in</b-button>
-    <b-button v-else @click="signOut" variant="dark">Sign Out</b-button>
+    <div v-if="!isLoggedIn">
+      <b-button :to="{ name: 'SignUp' }" size="sm" variant="outline-primary">Sign up</b-button>
+      <b-button :to="{ name: 'Login' }" size="sm" variant="outline-primary">Log in</b-button>
+    </div>
+    <div v-else>
+      <b-link :to="{ name: 'MyPage' }" router-tag="b-button">My Page</b-link>
+      <b-button @click="signOut" variant="dark">Sign Out</b-button>
+    </div>
     <p v-if="account">アカウント: {{ account }}</p>
     <p v-if="!account">アカウントが見つからないよ</p>
     <b-button :to="{ name: 'StartProject' }" variant="primary">Start Project</b-button>
