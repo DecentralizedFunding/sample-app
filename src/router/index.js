@@ -3,6 +3,7 @@ import Router from 'vue-router'
 import BootstrapVue from 'bootstrap-vue'
 
 import Login from '@/components/Login'
+import MyPage from '@/components/MyPage'
 import Project from '@/components/Project'
 import SignUp from '@/components/SignUp'
 import StartProject from '@/components/StartProject'
@@ -19,6 +20,11 @@ export default new Router({
       path: '/login',
       name: 'Login',
       component: Login
+    },
+    {
+      path: '/mypage',
+      name: 'MyPage',
+      component: MyPage
     },
     {
       path: '/project/:projectId',
