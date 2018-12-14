@@ -95,14 +95,6 @@ export default {
       tweetTime: null
     }
   },
-  beforeCreate () {
-    // If the user already logged in, redirect user page
-    firebase.auth().onAuthStateChanged((user) => {
-      if (user) {
-        this.$router.replace({ name: 'User', params: {'userId': user.displayName}})
-      }
-    })
-  },
   computed: {
     isSamePassword () {
       return this.form.retypedPassword === null ? null : this.form.password === this.form.retypedPassword ? true : false
@@ -172,6 +164,7 @@ export default {
             // Get from Twitter
             var imageUrl = response.data.result.replace('normal', '200x200')
             // Check file extension of profile image
+            /*
             var extension
             if (imageUrl.search('\.jpg') !== -1) {
               extension = 'jpg'
@@ -183,9 +176,9 @@ export default {
               extension = 'gif'
             } else {
               throw new Error('app/unknown-file-extension')
-            }
+            }*/
             // Create a reference to user's profile image
-            profileImageRef = storageRef.child(`images/users/${this.form.userName}.${extension}`)
+            profileImageRef = storageRef.child(`images/users/${this.form.userName}`)
             return fetch(imageUrl)
           })
           .then((response) => {
