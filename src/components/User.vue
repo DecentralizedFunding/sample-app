@@ -1,6 +1,6 @@
 <template>
   <div class="app">
-    <h2>作成者ページ</h2>
+    <h2>User Page</h2>
     <b-link :href="`https://twitter.com/${twitter}`">@{{ twitter }}</b-link>
     <p>user: {{ userName }}</p>
     <div class="project-box" v-for="project in projects" :key="project.id">
@@ -65,7 +65,7 @@ export default {
     DFcore.deployed()
       .then((instance) => this.contractAddress = instance.address)
 
-    db.collection('users').where('name', '==', this.$route.params.userId)
+    db.collection('users').where('address', '==', this.$route.params.address)
       .get()
       .then((querySnapshot) => {
         if (!querySnapshot.empty) {

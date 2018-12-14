@@ -46,7 +46,7 @@
       <b-button @click="reSendEmailVerification">再送信</b-button>
     </div>
     <div class="mx-auto" v-if="isSent">
-      <b-link :to="{ name: 'User', params: {userId: form.userName}}">進む</b-link>
+      <b-link :to="{ name: 'User', params: { address: form.address }}">進む</b-link>
     </div>
   </div>
 </template>

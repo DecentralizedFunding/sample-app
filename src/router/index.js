@@ -41,7 +41,7 @@ export default new Router({
       component: TopPage
     },
     {
-      path: '/user/:userId',
+      path: '/user/:address',
       name: 'User',
       component: User
     }
