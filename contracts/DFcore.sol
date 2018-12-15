@@ -20,6 +20,14 @@ contract Crediential is ERC721Full {
     super._burn(msg.sender, _tokenId);
   }
 
+  function refer721(address _owner) public view returns (uint[]) {
+    uint[] memory tokenlist = new uint[](balanceOf(_owner));
+    for (uint i = 0; i < balanceOf(_owner); i++) {
+      tokenlist[i] = tokenOfOwnerByIndex(_owner, i);
+    }
+    return tokenlist;
+  }
+
 }
 
 contract DFcore is Ownable, Crediential {
