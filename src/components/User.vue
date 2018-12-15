@@ -16,6 +16,9 @@
         </b-card>
       </router-link>
     </div>
+    <div>
+      <p>ここでERC721参照テストをしたい</p>
+    </div>
     <b-link :to="{ name: 'TopPage' }">トップへ戻る</b-link>
   </div>
 </template>
