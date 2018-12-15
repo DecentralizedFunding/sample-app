@@ -14,7 +14,10 @@
         <b-button @click="depositInProject(project.id)" variant="primary">支援する</b-button>
       </b-form>
     </div>
-    <b-link :to="{ name: 'TopPage' }">← トップに戻る</b-link>
+    <div v-if="!canDeposit&(goal<funded)">
+      <b-button>引き出す</b-button>
+    </div>
+    <router-link :to="{ name: 'TopPage' }">← トップに戻る</router-link>
   </div>
 </template>
 
@@ -153,6 +156,12 @@ export default {
         })
         .then(() => this.pledge = null)
         .catch((error) => console.error(error))
+    },
+    success_withdraw (id) {
+      return DFcore.deployed()
+        .then((instancd) => {
+          this
+        })
     }
   }
 }
