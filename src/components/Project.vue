@@ -1,13 +1,18 @@
 <template>
   <div class="app">
     <h2>Project page</h2>
-    <h3>{{ title }}</h3>
-    <p>目標金額 {{ goal }} ETH</p>
-    <p>集まった金額 {{ funded }} ETH</p>
-    <p>支援期限 {{ date }}</p>
-    <p>{{ supporters }}</p>
-    <div v-if="canDeposit">
-      <input v-model="pledge" placeholder="ETH"><button @click="depositInProject(id)">支援する</button>
+    <h3>{{ project.title }}</h3>
+    <b-img :src="`${project.image}`" width="320" height="240" blank-color="#bbb" fluid alt="Project image" />
+    <p>{{ project.description }}</p>
+    <p>目標金額 {{ project.goal }} ETH</p>
+    <p>集まった金額 {{ project.funded }} ETH</p>
+    <p>支援期限 {{ project.date }}</p>
+    <p v-show="project.supporters.length > 0">{{ project.supporters }}</p>
+    <div v-show="canDeposit">
+      <b-form inline>
+        <b-form-input v-model="pledge" placeholder="ETH"></b-form-input>
+        <b-button @click="depositInProject(project.id)" variant="primary">支援する</b-button>
+      </b-form>
     </div>
     <div v-if="!canDeposit&(goal<funded)">
       <b-button>引き出す</b-button>
@@ -22,23 +27,29 @@ import Web3 from 'web3'
 import contract from 'truffle-contract'
 import artifacts from '../../build/contracts/DFcore.json'
 import firebase from 'firebase'
-import db from '../firebaseInit'
+import { db, storage } from '../firebaseInit'
 import { sha256, sha224 } from 'js-sha256'
 
 var DFcore = contract(artifacts)
+
+var storageRef = storage.ref()
 
 export default {
   name: 'Project',
   data () {
     return {
       account: null,
-      id: null,
-      title: null,
-      goal: null,
-      funded: null,
-      date: null,
-      supporters: [],
-      owner: null,
+      project: {
+        id: null,
+        image: null,
+        title: null,
+        description: null,
+        goal: null,
+        funded: null,
+        data: null,
+        supporters: [],
+        owner: null
+      },
       // The amount of depositing by an user
       pledge: null,
       canDeposit: true
@@ -61,7 +72,7 @@ export default {
 
     web3.eth.getAccounts()
       .then((accounts) => this.account = accounts[0])
-      .catch(console.log)
+      .catch(console.error)
 
     var contract
     DFcore.deployed()
@@ -76,24 +87,30 @@ export default {
           this.canDeposit = false
         }
 
-        this.id = project[0].toNumber()
-        this.title = project[1]
-        this.goal = web3.utils.fromWei(web3.utils.toBN(project[2]))
-        this.funded = web3.utils.fromWei(web3.utils.toBN(project[3]))
-        this.date = new Date(unixTime).toLocaleDateString('ja-JP')
-        this.supporters = project[5]
+        this.project.id = project[0].toNumber()
+        this.project.title = project[1]
+        this.project.goal = web3.utils.fromWei(web3.utils.toBN(project[2]))
+        this.project.funded = web3.utils.fromWei(web3.utils.toBN(project[3]))
+        this.project.date = new Date(unixTime).toLocaleDateString('ja-JP')
+        this.project.supporters = project[5]
 
-        return contract.PJToOwner(this.id)
+        return contract.PJToOwner(this.project.id)
       })
-      .then((owner) => this.owner = owner)
+      .then((owner) => {
+        this.canDeposit = owner === this.account.toLowerCase() ? false : true
+        this.project.owner = owner
+        return db.collection('projects').doc(this.project.id.toString()).get()
+      })
+      .then((doc) => {
+        this.project.description = doc.data().description
+        return storageRef.child(`images/projects/${this.project.id}`).getDownloadURL()
+      })
+      .then((url) => this.project.image = url)
+      .catch(console.error)
 
     web3.currentProvider.publicConfigStore.on('update', (info) => {
       this.account = info.selectedAddress
-      if (this.owner === this.account.toLowerCase()) {
-        this.canDeposit = false
-      } else {
-        this.canDeposit = true
-      }
+      this.canDeposit = this.project.owner === this.account.toLowerCase() ? false : true
     })
   },
   mounted () {
@@ -107,9 +124,8 @@ export default {
             var funded = web3.utils.fromWei(web3.utils.toBN(project.funded))
             var pledged = web3.utils.fromWei(web3.utils.toBN(project.pledged))
             // Check whether it is a new event or not
-            if (Number(this.funded) === Number(funded) - Number(pledged)) {
-              this.funded = funded
-              this.supporters = project.supporters
+            if (Number(this.project.funded) === Number(funded) - Number(pledged)) {
+              this.project.funded = funded
             }
           }
         })

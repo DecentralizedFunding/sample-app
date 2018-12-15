@@ -1,22 +1,24 @@
 <template>
   <div class="app">
-    <h2>User Page</h2>
-    <b-link :href="`https://twitter.com/${twitter}`">@{{ twitter }}</b-link>
-    <p>user: {{ userName }}</p>
+    <h2>My page</h2>
+    <b-img :src="`${db.image}`" width="96" height="96" blank-color="#bbb" fluid alt="Icon" />
+    <p>user: {{ db.userName }}</p>
+    <b-button v-show="!isEmailVerified" @click="reSendEmailVerification" variant="warning">Resend verification Email</b-button>
     <div class="project-box" v-for="project in projects" :key="project.id">
-      <router-link :to="{ name: 'Project', params: { projectId: project.id }}">
-        <b-card tag="article">
-          <h4>{{ project.title }}</h4>
-          <p>目標金額 {{ project.goal }} ETH</p>
-          <b-progress :value="project.funded" :max="project.goal" show-progress animated></b-progress>
-          <p v-if="project.left.days > 0">残り {{ project.left.days }} 日</p>
-          <p v-else-if="project.left.hours > 0">残り {{ project.left.hours }} 時間</p>
-          <p v-else-if="project.left.mitunes >= 0">残り {{ project.left.mitunes }} 分</p>
-          <p v-else-if="project.left.minutes < 0">終了</p>
-        </b-card>
-      </router-link>
+      <b-card tag="article">
+        <h4>{{ project.title }}</h4>
+        <b-progress :value="project.funded" :max="project.goal" show-progress animated></b-progress>
+        <p>GOAL {{ project.goal }} ETH</p>
+        <p v-if="project.left.days > 1">{{ project.left.days }} days left</p>
+        <p v-else-if="project.left.hours > 1">{{ project.left.hours }} hours left</p>
+        <p v-else-if="project.left.mitunes >= 0">{{ project.left.mitunes }} minutes left</p>
+        <p v-else-if="project.left.minutes < 0">Ended</p>
+        <div v-show="project.left.minutes < 0">
+          <b-button v-if="isSuccess(project)" @click="withdraw(project.id)">Withdraw</b-button>
+          <b-button v-else @click="refund(project.id)">Refund</b-button>
+        </div>
+      </b-card>
     </div>
-    <b-link :to="{ name: 'TopPage' }">トップへ戻る</b-link>
   </div>
 </template>
 
@@ -26,22 +28,32 @@ import Web3 from 'web3'
 import contract from 'truffle-contract'
 import artifacts from '../../build/contracts/DFcore.json'
 
-import 'bootstrap/dist/css/bootstrap.css'
-import 'bootstrap-vue/dist/bootstrap-vue.css'
-
 import firebase from 'firebase'
 import { db, storage } from '../firebaseInit'
 
 var DFcore = contract(artifacts)
 
+var storageRef = storage.ref()
+
 export default {
   name: 'User',
   data () {
     return {
+      isEmailVerified: true,
       projects: [],
-      twitter: null,
-      userName: null
+      user: null,
+      db: {
+        image: null,
+        userName: null
+      }
     }
+  },
+  beforeCreate () {
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        this.$router.replace({ name: 'Login' })
+      }
+    })
   },
   created () {
     if (typeof web3 !== 'undefined') {
@@ -65,20 +77,27 @@ export default {
     DFcore.deployed()
       .then((instance) => this.contractAddress = instance.address)
 
-    db.collection('users').where('address', '==', this.$route.params.address)
-      .get()
-      .then((querySnapshot) => {
-        if (!querySnapshot.empty) {
-          querySnapshot.forEach((doc) => {
-            var data = doc.data()
-            this.twitter = data.twitter
-            this.userName = data.name
-          })
-        } else {
-          throw new Error('No such document.')
-        }
+    new Promise((resolve, reject) => {
+      firebase.auth().onAuthStateChanged((user) => {
+        this.user = user
+        resolve(user.emailVerified)
       })
-      .catch(console.error)
+    })
+    .then((isVerified) => {
+      this.isEmailVerified = isVerified
+      this.db.image = this.user.photoURL
+      return db.collection('users').where('name', '==', this.user.displayName).get()
+    })
+    .then((querySnapshot) => {
+      if (!querySnapshot.empty) {
+        querySnapshot.forEach((doc) => {
+          this.db.userName = doc.data().name
+        })
+      } else {
+        throw new Error('No such document.')
+      }
+    })
+    .catch(console.error)
   },
   beforeMount () {
     var contract
@@ -122,30 +141,32 @@ export default {
       })
   },
   methods: {
+    isSuccess (project) {
+      return project.funded >= project.goal ? true : false
+    },
+    refund (id) {
+      DFcore.deployed()
+        .then((instance) => {
+          instance.failure_withdraw(id)
+        })
+    },
+    reSendEmailVerification () {
+      firebase.auth().onAuthStateChanged((user) => {
+        user.sendEmailVerification()
+          .catch(console.error)
+      })
+    },
+    withdraw (id) {
+      DFcore.deployed()
+        .then((instance) => {
+          instance.success_withdraw(id)
+        })
+    }
   }
 }
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-article, .project-box {
-  width: 320px;
-}
 
-article:hover {
-  box-shadow: 0 0 2px 0 #007bff;
-}
-
-.project-box {
-  border: none;
-}
-
-.project-box a, .project-box *:hover {
-  color: inherit;
-  text-decoration: none;
-}
-
-.project-box #title {
-  font-weight: bold;
-}
 </style>
