@@ -59,7 +59,7 @@ export default {
   methods: {
     logIn () {
       firebase.auth().signInWithEmailAndPassword(this.email, this.password)
-        .then((info) => this.$router.replace({ name: 'User', params: { userId: info.user.displayName }}))
+        .then((info) => this.$router.replace({ name: 'MyPage' }))
         .catch((error) => {
           switch (error.code) {
             case 'auth/invalid-email':
