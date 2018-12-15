@@ -1,7 +1,7 @@
 {
-  "name": "truffle-test",
+  "name": "Decentralized-Funding",
   "version": "1.0.0",
-  "description": "Test project using Truffle framework",
+  "description": "CrowdFunding with Ethereum",
   "author": "mktia",
   "private": true,
   "scripts": {
