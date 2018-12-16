@@ -112,7 +112,7 @@ export default {
       web3.eth.getAccounts()
         .then((accounts) => {
         // Reload the page if the user switch Metamask account
-        if (this.account !== accounts[0]) {
+        if (this.account !== accounts[0].toLowerCase()) {
           alert('アカウントが切り替わったため、再読み込みします')
           location.reload()
         }
