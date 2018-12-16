@@ -68,7 +68,7 @@ export default {
       .then((coinbase) => DFcore.defaults({from: coinbase}))
 
     web3.eth.getAccounts()
-      .then((accounts) => this.account = accounts[0])
+      .then((accounts) => this.account = accounts[0].toLowerCase())
       .catch(console.error)
 
     var contract
@@ -94,7 +94,7 @@ export default {
         return contract.PJToOwner(this.project.id)
       })
       .then((owner) => {
-        this.canDeposit = owner === this.account.toLowerCase() ? false : true
+        this.canDeposit = owner === this.account ? false : true
         this.project.owner = owner
         return db.collection('projects').doc(this.project.id.toString()).get()
       })
@@ -106,8 +106,8 @@ export default {
       .catch(console.error)
 
     web3.currentProvider.publicConfigStore.on('update', (info) => {
-      this.account = info.selectedAddress
-      this.canDeposit = this.project.owner === this.account.toLowerCase() ? false : true
+      this.account = info.selectedAddress.toLowerCase()
+      this.canDeposit = this.project.owner === this.account ? false : true
     })
   },
   mounted () {
@@ -133,7 +133,7 @@ export default {
       web3.eth.getAccounts()
         .then((accounts) => {
           // Reload the page if the user switch Metamask account
-          if (this.account !== accounts[0]) {
+          if (this.account !== accounts[0].toLowerCase()) {
             alert('アカウントが切り替わったため、再読み込みします')
             location.reload()
           }
@@ -145,7 +145,7 @@ export default {
       return DFcore.deployed()
         .then((instance) => {
           this.checkAccount()
-          return instance.deposit(id, uri, {gas: 1000000, value: web3.utils.toWei(this.pledge)})
+          return instance.deposit(id, uri, {gas: 1000000, value: web3.utils.toWei(this.pledge), from: this.account})
         }).then(() => {
           return db.collection('nftdata').doc(uri).set({
             Metadata: json
