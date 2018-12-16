@@ -1,24 +1,63 @@
 <template>
   <div class="app">
-    <h2>My page</h2>
-    <b-img :src="`${db.image}`" width="96" height="96" blank-color="#bbb" fluid alt="Icon" />
-    <p>user: {{ db.userName }}</p>
-    <b-button v-show="!isEmailVerified" @click="reSendEmailVerification" variant="warning">Resend verification Email</b-button>
-    <div class="project-box" v-for="project in projects" :key="project.id">
-      <b-card tag="article">
-        <h4>{{ project.title }}</h4>
-        <b-progress :value="project.funded" :max="project.goal" show-progress animated></b-progress>
-        <p>GOAL {{ project.goal }} ETH</p>
-        <p v-if="project.left.days > 1">{{ project.left.days }} days left</p>
-        <p v-else-if="project.left.hours > 1">{{ project.left.hours }} hours left</p>
-        <p v-else-if="project.left.mitunes >= 0">{{ project.left.mitunes }} minutes left</p>
-        <p v-else-if="project.left.minutes < 0">Ended</p>
-        <div v-show="project.left.minutes < 0">
-          <b-button v-if="isSuccess(project)" @click="withdraw(project.id)">Withdraw</b-button>
-          <b-button v-else @click="refund(project.id)">Refund</b-button>
-        </div>
-      </b-card>
+    <b-container class="profile py-3">
+      <b-row class="justify-content-center mt-5 mb-3">
+        <b-img class="profile_image" :src="`${db.image}`" width="96" height="96" blank-color="#bbb" alt="Icon" />
+      </b-row>
+      <b-row class="justify-content-center">
+        @{{ db.userName }}
+      </b-row>
+      <b-row class="justify-content-center">
+        <span class="address">
+          {{ db.address }}
+        </span>
+      </b-row>
+    </b-container>
+    <b-alert class="my-2" v-show="!isEmailVerified" show variant="warning">
+      Please verify your Email address first.
+      <b-button class="mt-1" @click="reSendEmailVerification" variant="warning">Resend verification Email</b-button>
+    </b-alert>
+    <h2 class="h4 pt-4 pb-2">Projects you started</h2>
+    <p v-if="projects.length === 0">No Project</p>
+    <div v-else class="project-box" v-for="project in projects" :key="project.id">
+      <b-link :to="{ name: 'Project', params: {projectId: project.id }}">
+        <b-card class="my-2" tag="article">
+          <h3 class="h4">{{ project.title }}</h3>
+          <b-row align-v="center">
+            <b-col>
+              <b-progress class="mb-1" :value="project.funded" :max="project.goal"></b-progress>
+            </b-col>
+            <b-col class="percent pl-0" cols="auto">{{ project.percent }}%</b-col>
+          </b-row>
+          <b-row align-h="between">
+            <b-col>
+              <i class="fas fa-flag-checkered"></i>
+              {{ project.goal }} ETH
+            </b-col>
+            <b-col cols="auto" v-if="project.left.days > 1">
+              <i class="far fa-clock"></i>
+              {{ project.left.days }} days left
+            </b-col>
+            <b-col cols="auto" v-else-if="project.left.hours > 1">
+              <i class="far fa-clock"></i>
+              {{ project.left.hours }} hours left
+            </b-col>
+            <b-col cols="auto" v-else-if="project.left.mitunes >= 0">
+              <i class="far fa-clock"></i>
+              {{ project.left.mitunes }} mitunes left
+            </b-col>
+            <b-col cols="auto" v-else-if="project.left.minutes < 0">Ended</b-col>
+          </b-row>
+          <div class="mt-2" v-show="project.left.minutes < 0">
+            <b-button class="w-100" v-if="isSuccess(project)" @click="withdraw(project.id)" variant="outline-success">Withdraw</b-button>
+            <b-button class="w-100" v-else @click="refund(project.id)" variant="outline-warning">Refund</b-button>
+          </div>
+        </b-card>
+      </b-link>
     </div>
+    <b-row class="justify-content-center">
+      <b-button @click="signOut" class="btn-outline-secondary">Log Out</b-button>
+    </b-row>
   </div>
 </template>
 
@@ -43,6 +82,7 @@ export default {
       projects: [],
       user: null,
       db: {
+        addres: null,
         image: null,
         userName: null
       }
@@ -71,11 +111,16 @@ export default {
       .then((coinbase) => DFcore.defaults({from: coinbase}))
 
     web3.eth.getAccounts()
-      .then((accounts) => this.account = accounts[0])
+      .then((accounts) => this.account = accounts[0].toLowerCase())
       .catch(console.log)
 
-    DFcore.deployed()
-      .then((instance) => this.contractAddress = instance.address)
+    web3.currentProvider.publicConfigStore.on('update', (info) => {
+      if (this.account !== info.selectedAddress.toLowerCase()) {
+        this.getCreatedProject()
+      }
+    })
+
+    this.getCreatedProject()
 
     new Promise((resolve, reject) => {
       firebase.auth().onAuthStateChanged((user) => {
@@ -92,6 +137,7 @@ export default {
       if (!querySnapshot.empty) {
         querySnapshot.forEach((doc) => {
           this.db.userName = doc.data().name
+          this.db.address = doc.data().address
         })
       } else {
         throw new Error('No such document.')
@@ -99,48 +145,53 @@ export default {
     })
     .catch(console.error)
   },
-  beforeMount () {
-    var contract
-    var projectLength
-    DFcore.deployed()
-      .then((instance) => {
-        contract = instance
-        return contract.getPJByOwner(this.account)
-      })
-      .then((list) => {
-        var promises = []
-        list.forEach((id) => {
-          promises.push(contract.getPJInfo(id.toNumber()))
-        })
-        projectLength = promises.length
-        return Promise.all(promises)
-      })
-      .then((projects) => {
-        for (var i = 0; i < projectLength; i++) {
-          // 1e21 対策
-          var goal = web3.utils.fromWei(web3.utils.toBN(projects[i][2]), 'ether')
-          var funded = web3.utils.fromWei(web3.utils.toBN(projects[i][3]), 'ether')
-          var unixTime = projects[i][4].toNumber()
-          var date = new Date(unixTime)
-          var left = unixTime - Date.now()
-
-          this.projects.unshift({
-            'id': projects[i][0].toNumber(),
-            'title': projects[i][1],
-            'goal': Number(goal),
-            'funded': Number(funded),
-            'limitTime': date.toLocaleDateString('ja-JP'),
-            'supporters': projects[i][5],
-            'left': {
-              'days': Math.floor(left / (24 * 60 * 60 * 1000)),
-              'hours': Math.floor(left / (60 * 60 * 1000)),
-              'minutes': Math.floor(left / (60 * 1000))
-            }
-          })
-        }
-      })
-  },
   methods: {
+    getCreatedProject () {
+      var contract
+      var projectLength
+      DFcore.deployed()
+        .then((instance) => {
+          contract = instance
+          return web3.eth.getAccounts()
+        })
+        .then((accounts) => {
+          return contract.getPJByOwner(accounts[0])
+        })
+        .then((list) => {
+          var promises = []
+          list.forEach((id) => {
+            promises.push(contract.getPJInfo(id.toNumber()))
+          })
+          projectLength = promises.length
+          return Promise.all(promises)
+        })
+        .then((projects) => {
+          for (var i = 0; i < projectLength; i++) {
+            // 1e21 対策
+            var goal = web3.utils.fromWei(web3.utils.toBN(projects[i][2]), 'ether')
+            var funded = web3.utils.fromWei(web3.utils.toBN(projects[i][3]), 'ether')
+            var unixTime = projects[i][4].toNumber()
+            var date = new Date(unixTime)
+            var left = unixTime - Date.now()
+
+            this.projects.unshift({
+              'id': projects[i][0].toNumber(),
+              'title': projects[i][1],
+              'goal': Number(goal),
+              'funded': Number(funded),
+              'percent': Math.floor(Number(funded) / Number(goal) * 100),
+              'limitTime': date.toLocaleDateString('ja-JP'),
+              'supporters': projects[i][5],
+              'left': {
+                'days': Math.floor(left / (24 * 60 * 60 * 1000)),
+                'hours': Math.floor(left / (60 * 60 * 1000)),
+                'minutes': Math.floor(left / (60 * 1000))
+              }
+            })
+          }
+        })
+        .catch(console.error)
+    },
     isSuccess (project) {
       return project.funded >= project.goal ? true : false
     },
@@ -156,6 +207,10 @@ export default {
           .catch(console.error)
       })
     },
+    signOut () {
+      firebase.auth().signOut()
+        .then(() => window.location.replace('http://localhost:8080'))
+    },
     withdraw (id) {
       DFcore.deployed()
         .then((instance) => {
@@ -168,5 +223,36 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+.address {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 192px;
+  white-space: nowrap;
+}
 
+.percent {
+  font-size: 0.9rem;
+  width: 68px;
+}
+
+.profile {
+  background-color: #ccc;
+  height: 256px;
+  margin-left: -15px;
+  margin-right: -15px;
+  width: initial;
+}
+
+.project-box a, .project-box *:hover {
+  color: inherit;
+  text-decoration: none;
+}
+
+.progress {
+  height: 0.5rem;
+}
+
+.profile_image {
+  border-radius: 50%;
+}
 </style>
