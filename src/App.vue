@@ -8,7 +8,7 @@
         <b-link :to="{ name: 'TopPage' }" class="flex-grow-1">
           <h1 class="text-dark">DF</h1>
         </b-link>
-        <b-link v-if="!isLoggedIn" :to="{ name: 'Login' }">Login</b-link>
+        <b-link v-if="!isLoggedIn" :to="{ name: 'Login' }">Log in</b-link>
         <b-link v-else :to="{ name: 'MyPage' }">
           <i class="fas fa-user fa-lg"></i>
         </b-link>

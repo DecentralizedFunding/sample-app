@@ -1,12 +1,12 @@
 <template>
   <div class="app">
     <b-card class="mt-4">
-      <h2 class="h3">Login</h2>
+      <h2 class="h3">Log in</h2>
       <b-form inline class="mt-3 mb-3">
         <b-form-input class="my-2" v-model="email" type="email" placeholder="Email" required></b-form-input>
         <b-form-input class="my-2" v-model="password" type="password" placeholder="Password" required></b-form-input>
         <b-link :to="{ name: 'ResetPassword' }">Forgot password?</b-link>
-        <b-button class="container my-4" @click="logIn" variant="primary">Login</b-button>
+        <b-button class="container my-4" @click="logIn" variant="primary">Log in</b-button>
       </b-form>
       <div class="line"></div>
       <b-row class="mt-4 justify-content-center">
