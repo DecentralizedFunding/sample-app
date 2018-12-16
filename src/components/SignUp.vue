@@ -1,53 +1,60 @@
 <template>
   <div class="app">
-    <h2>Login page</h2>
-    <b-form class="mx-auto" style="width: 320px;" @submit="onSubmit">
-      <b-form-group label="ユーザー名">
-        <b-form-input v-model="form.userName" type="text" placeholder="半角英数字" required></b-form-input>
-        <b-form-invalid-feedback>このユーザー名はすでに使われています</b-form-invalid-feedback>
-      </b-form-group>
-      <b-form-group label="Twitterアカウント" description="アカウント認証に使うTwitterアカウントのユーザー名">
-        <b-input-group prepend="@">
-          <b-form-input v-model="form.twitter" type="text" :readonly="isPost" placeholder="Twitterアカウント" required></b-form-input>
-        </b-input-group>
-      </b-form-group>
-      <b-form-group label="認証用パスワード" description="アカウント認証に使うパスワード">
-        <b-input-group>
-          <b-form-input class="mr-1" v-model="form.twitterPass" type="password" :readonly="isPost" placeholder="認証用パスワード" required></b-form-input>
-          <b-button v-if="isTwitterFormInput" @click="tweet" variant="primary">投稿</b-button>
-          <b-button v-else disabled>投稿</b-button>
-        </b-input-group>
-      </b-form-group>
-      <b-form-group label="ウォレットアドレス" description="プロジェクト作成用に登録するウォレットアドレス">
-        <b-form-input v-model="form.address" type="text" placeholder="ウォレットアドレス" required></b-form-input>
-      </b-form-group>
-      <b-form-group label="メールアドレス">
-        <b-form-input v-model="form.email" type="email" placeholder="email@example.com" required></b-form-input>
-        <b-form-invalid-feedback>このメールアドレスはすでに使われています</b-form-invalid-feedback>
-      </b-form-group>
-      <b-form-group label="パスワード">
-        <b-form-input v-model="form.password" type="password" placeholder="半角英数字6文字以上" required></b-form-input>
-      </b-form-group>
-      <b-form-group label="パスワード (確認)">
-        <b-form-input v-model="form.retypedPassword" type="password" :state="isSamePassword" placeholder="パスワード (確認)" required></b-form-input>
-        <b-form-invalid-feedback>パスワードが一致しません</b-form-invalid-feedback>
-      </b-form-group>
-      <b-alert v-if="errorMessage" show variant="danger">{{ errorMessage }}</b-alert>
-      <div v-if="!isSent">
-        <b-button v-if="isSamePassword" @click="registerUser" type="submit" variant="primary">登録</b-button>
-        <b-button v-else disabled variant="secondary">登録</b-button>
-      </div>
-    </b-form>
-    <b-alert v-if="isSent" show variant="success">
-      <p>{{ form.email }} に確認メールを送信しました。</p>
-      <p>確認メールのリンクを開いてメールアドレスが有効になったら登録完了です。</p>
+    <b-card class="mt-4">
+      <b-row class="mb-3 justify-content-center">
+        Have an account?&nbsp;
+        <b-link :to="{ name: 'Login' }">Log in</b-link>
+      </b-row>
+      <div class="line"></div>
+      <h2 class="h3 my-4">Sign Up</h2>
+      <b-form @submit="onSubmit">
+        <b-form-group label="Username">
+          <b-form-input v-model="form.userName" type="text" placeholder="Username" required></b-form-input>
+          <b-form-invalid-feedback>This username is already token.</b-form-invalid-feedback>
+        </b-form-group>
+        <b-form-group label="Twitter account" description="Twitter account to use verification">
+          <b-input-group prepend="@">
+            <b-form-input v-model="form.twitter" type="text" :readonly="isPost" placeholder="Username" required></b-form-input>
+          </b-input-group>
+        </b-form-group>
+        <b-form-group label="One-time password" description="One-time password to use verification with Twitter">
+          <b-input-group>
+            <b-form-input class="mr-1" v-model="form.twitterPass" type="password" :readonly="isPost" placeholder="One-time Password" required></b-form-input>
+            <b-button v-if="isTwitterFormInput" @click="tweet" variant="primary">Post</b-button>
+            <b-button v-else disabled>Post</b-button>
+          </b-input-group>
+        </b-form-group>
+        <b-form-group label="Wallet address" description="Wallet address to use start your project">
+          <b-form-input v-model="form.address" type="text" placeholder="Wallet address" required></b-form-input>
+        </b-form-group>
+        <b-form-group label="Email">
+          <b-form-input v-model="form.email" type="email" placeholder="email@example.com" required></b-form-input>
+          <b-form-invalid-feedback>This email address is already in use.</b-form-invalid-feedback>
+        </b-form-group>
+        <b-form-group label="Password">
+          <b-form-input v-model="form.password" type="password" placeholder="Password (6 or more characters)" required></b-form-input>
+        </b-form-group>
+        <b-form-group label="Re-enter password">
+          <b-form-input v-model="form.retypedPassword" type="password" :state="isSamePassword" placeholder="Confirm" required></b-form-input>
+          <b-form-invalid-feedback>Re-enter password is not correct.</b-form-invalid-feedback>
+        </b-form-group>
+        <b-alert v-if="errorMessage" show variant="danger">{{ errorMessage }}</b-alert>
+        <div v-if="!isSent">
+          <b-button v-if="isSamePassword" @click="registerUser" type="submit" variant="primary">Register</b-button>
+          <b-button v-else disabled variant="secondary">Register</b-button>
+        </div>
+      </b-form>
+    </b-card>
+    <b-alert class="my-2" v-if="isSent" show variant="success">
+      <p>We send the mail to {{ form.email }}</p>
     </b-alert>
-    <div class="mx-auto" v-if="isSent">
-      <b-button @click="reSendEmailVerification">再送信</b-button>
-    </div>
-    <div class="mx-auto" v-if="isSent">
-      <b-link :to="{ name: 'User', params: { address: form.address }}">進む</b-link>
-    </div>
+    <b-alert class="my-2" v-if="isSent" show variant="info">
+      <p>If you cannot receive the email, we send it again.</p>
+      <b-button @click="reSendEmailVerification" variant="info">Re-send</b-button>
+    </b-alert>
+    <b-row class="mt-4 justify-content-center" v-if="isSent">
+      <b-button :to="{ name: 'MyPage' }" variant="primary">Continue</b-button>
+    </b-row>
   </div>
 </template>
 
@@ -268,5 +275,9 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-
+.line {
+  background-color: #ddd;
+  height: 1px;
+  text-align: center;
+}
 </style>
