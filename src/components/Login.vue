@@ -1,13 +1,24 @@
 <template>
   <div class="app">
-    <h2>Login page</h2>
-    <b-form inline class="mt-3 mb-3">
-      <b-form-input class="m-1" v-model="email" type="email" placeholder="メールアドレス" required></b-form-input>
-      <b-form-input class="m-1" v-model="password" type="password" placeholder="パスワード" required></b-form-input>
-      <b-button class="m-1" @click="logIn" variant="primary">ログイン</b-button>
-    </b-form>
-    <p v-if="loginErrorMessage">{{ loginErrorMessage }}</p>
-    <router-link :to="{ name: 'TopPage' }">← トップに戻る</router-link>
+    <b-card class="mt-4">
+      <h2 class="h3">Login</h2>
+      <b-form inline class="mt-3 mb-3">
+        <b-form-input class="my-2" v-model="email" type="email" placeholder="Email" required></b-form-input>
+        <b-form-input class="my-2" v-model="password" type="password" placeholder="Password" required></b-form-input>
+        <b-link :to="{ name: 'ResetPassword' }">Forgot password?</b-link>
+        <b-button class="container my-4" @click="logIn" variant="primary">Login</b-button>
+      </b-form>
+      <div class="line"></div>
+      <b-row class="mt-4 justify-content-center">
+        New to Decentralized Funding?
+      </b-row>
+      <b-row class="mt-2 mb-4 justify-content-center">
+        <b-link :to="{ name: 'SignUp' }">Sign Up!</b-link>
+      </b-row>
+    </b-card>
+    <b-alert v-show="loginErrorMessage" show variant="danger">
+      {{ loginErrorMessage }}
+    </b-alert>
   </div>
 </template>
 
@@ -83,5 +94,9 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-
+.line {
+  background-color: #ddd;
+  height: 1px;
+  text-align: center;
+}
 </style>
