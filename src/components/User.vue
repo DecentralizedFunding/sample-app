@@ -123,6 +123,14 @@ export default {
           })
         }
       })
+      .then(() => {
+        return contract.refer721(this.account)
+      })
+      .then((list) => {
+        for (var i = 0; i < list.length; i ++) {
+          console.log(contract.tokenURI(list[i].c[0]))
+        }
+      })
   },
   methods: {
   }
