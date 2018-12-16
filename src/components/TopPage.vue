@@ -147,7 +147,7 @@ export default {
             'title': projects[i][1],
             'goal': Number(goal),
             'funded': Number(funded),
-            'percent': Number(funded) / Number(goal) * 100,
+            'percent': Math.floor(Number(funded) / Number(goal) * 100),
             'limitTime': date.toLocaleDateString('ja-JP'),
             'supporters': projects[i][5],
             'left': {
@@ -165,10 +165,6 @@ export default {
     },
     onSlideEnd (slide) {
       this.sliding = false
-    },
-    signOut () {
-      firebase.auth().signOut()
-        .then(() => location.reload())
     }
   }
 }
@@ -200,7 +196,8 @@ export default {
 }
 
 .percent {
-  font-size: 1rem;
+  font-size: 0.9rem;
+  width: 68px;
 }
 
 .progress {
