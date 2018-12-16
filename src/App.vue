@@ -9,7 +9,9 @@
           <h1 class="text-dark">DF</h1>
         </b-link>
         <b-link v-if="!isLoggedIn" :to="{ name: 'Login' }">Login</b-link>
-        <b-link v-else :to="{ name: 'MyPage' }">MyPage</b-link>
+        <b-link v-else :to="{ name: 'MyPage' }">
+          <i class="fas fa-user fa-lg"></i>
+        </b-link>
       </div>
     </div>
     <router-view/>
@@ -41,7 +43,7 @@ export default {
 
 <style>
 .app {
-  padding-top: 64px;
+  padding-top: 3rem;
 }
 
 .menu-button, .menu-button:hover {
@@ -77,6 +79,7 @@ export default {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
-  background-color: #f9f9f9;
+  background-color: #eee;
+  padding-bottom: 48px;
 }
 </style>
