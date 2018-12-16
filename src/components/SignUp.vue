@@ -38,10 +38,13 @@
           <b-form-input v-model="form.retypedPassword" type="password" :state="isSamePassword" placeholder="Confirm" required></b-form-input>
           <b-form-invalid-feedback>Re-enter password is not correct.</b-form-invalid-feedback>
         </b-form-group>
-        <b-alert v-if="errorMessage" show variant="danger">{{ errorMessage }}</b-alert>
-        <div v-if="!isSent">
-          <b-button v-if="isSamePassword" @click="registerUser" type="submit" variant="primary">Register</b-button>
-          <b-button v-else disabled variant="secondary">Register</b-button>
+        <b-alert class="my-2" v-if="errorMessage" show variant="danger">{{ errorMessage }}</b-alert>
+        <b-row class="my-2 justify-content-center" v-show="isLoading">
+          <atom-spinner :animation-duration="1000" :size="60" :color="'#007bff'" />
+        </b-row>
+        <div class="mt-4 mb-2" v-if="!isSent">
+          <b-button class="w-100" v-if="isSamePassword" @click="registerUser" type="submit" variant="primary">Register</b-button>
+          <b-button class="w-100" v-else disabled variant="secondary">Register</b-button>
         </div>
       </b-form>
     </b-card>
@@ -59,15 +62,14 @@
 </template>
 
 <script>
+/* eslint-disable */
 import Web3 from 'web3'
-
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
-/* eslint-disable */
 import firebase from 'firebase'
 import { db, storage } from '../firebaseInit'
-
 import { sha256 } from 'js-sha256'
+import { AtomSpinner } from 'epic-spinners'
 
 var axiosBase = require('axios')
 var axios = axiosBase.create({
@@ -96,11 +98,15 @@ export default {
         userName: null,
       },
       isDuplicate: false,
+      isLoading: false,
       isPost: false,
       isSent: false,
       isVerified: false,
       tweetTime: null
     }
+  },
+  components: {
+    AtomSpinner
   },
   computed: {
     isSamePassword () {
@@ -131,6 +137,7 @@ export default {
     registerUser () {
       // Hide previous error message
       this.errorMessage = null
+      this.isLoading = true
 
       try {
         if (!this.isPost) {
@@ -212,10 +219,12 @@ export default {
             })
           })
           .then(() => {
+            this.isLoading = false
             return user.sendEmailVerification()
           })
           .then(() => this.isSent = true)
           .catch((error) => {
+            this.isLoading = false
             if (error.code !== undefined) {
               switch (error.code) {
                 case 'auth/email-already-in-use':
@@ -244,6 +253,7 @@ export default {
             }
           })
       } catch (error) {
+        this.isLoading = false
         switch (error.message) {
           case 'app/have-no-post':
             this.errorMessage = '登録前にTwitterに認証用ツイートを投稿してください'
