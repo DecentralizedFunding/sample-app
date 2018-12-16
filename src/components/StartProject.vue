@@ -1,27 +1,33 @@
 <template>
   <div class="app">
-    <h2>Create Project</h2>
-    <b-form class="mx-auto" style="width: 320px;" @submit="onSubmit">
-      <b-form-group label="アイキャッチ画像">
-        <b-form-file v-model="form.image" accept=".jpg, .png" placeholder="JPG または PNG" required></b-form-file>
-      </b-form-group>
-      <b-form-group label="タイトル">
-        <b-form-input v-model="form.title" type="text" placeholder="タイトル (目的)" required></b-form-input>
-      </b-form-group>
-      <b-form-group label="やりたいこと">
-        <b-form-input v-model="form.content" type="text" placeholder="説明文" required></b-form-input>
-      </b-form-group>
-      <b-form-group label="目標金額">
-        <b-form-input v-model="form.goal" type="text" placeholder="ETH" required></b-form-input>
-      </b-form-group>
-      <b-form-group label="期限">
-        <b-form-input v-model="form.date" type="date" required></b-form-input>
-      </b-form-group>
-      <b-button v-if="isFormFilled" @click="startProject" type="submit" variant="primary">つくる</b-button>
-      <b-button v-else variant="secondary" disabled>つくる</b-button>
-      <b-alert v-if="errorMessage" show variant="danger">{{ errorMessage }}</b-alert>
-    </b-form>
-    <b-link :to="{ name: 'TopPage' }">← トップに戻る</b-link>
+    <b-card class="mt-4">
+      <h2 class="h3">Start a Project</h2>
+      <b-form @submit="onSubmit">
+        <b-form-group label="Image">
+          <b-form-file v-model="form.image" accept=".jpg, .png" placeholder="JPG or PNG" required></b-form-file>
+        </b-form-group>
+        <b-form-group label="Title">
+          <b-form-input v-model="form.title" type="text" placeholder="Purpose" required></b-form-input>
+        </b-form-group>
+        <b-form-group label="What do you want to do?">
+          <b-form-input v-model="form.content" type="text" placeholder="Description" required></b-form-input>
+        </b-form-group>
+        <b-form-group label="Goal">
+          <b-input-group append="ETH">
+            <b-form-input v-model="form.goal" type="text" placeholder="0.1" required></b-form-input>
+          </b-input-group>
+        </b-form-group>
+        <b-form-group label="Time limit">
+            <b-form-input v-model="form.date" type="date" required></b-form-input>
+        </b-form-group>
+        <b-row class="my-2 justify-content-center" v-show="isLoading">
+          <atom-spinner :animation-duration="1000" :size="60" :color="'#007bff'" />
+        </b-row>
+        <b-button class="w-100 mt-2" v-if="isFormFilled" @click="startProject" type="submit" variant="primary">Start</b-button>
+        <b-button class="w-100 mt-2" v-else variant="secondary" disabled>Start</b-button>
+        <b-alert class="my-2" v-show="errorMessage" show variant="danger">{{ errorMessage }}</b-alert>
+      </b-form>
+    </b-card>
   </div>
 </template>
 
@@ -35,6 +41,8 @@ var DFcore = contract(artifacts)
 
 import firebase from 'firebase'
 import { db, storage } from '../firebaseInit'
+
+import { AtomSpinner } from 'epic-spinners'
 
 var storageRef = storage.ref()
 
@@ -51,8 +59,12 @@ export default {
         goal: null,
         date: null
       },
-      errorMessage: null
+      errorMessage: null,
+      isLoading: false
     }
+  },
+  components: {
+    AtomSpinner
   },
   computed: {
     isFormFilled () {
@@ -82,13 +94,12 @@ export default {
       .then((coinbase) => DFcore.defaults({from: coinbase}))
 
     web3.eth.getAccounts()
-      .then((accounts) => this.account = accounts[0])
+      .then((accounts) => this.account = accounts[0].toLowerCase())
       .catch(console.error)
 
-    web3.currentProvider.publicConfigStore.on('update', (info) => this.account = info.selectedAddress)
-
-    DFcore.deployed()
-      .then((instance) => this.contractAddress = instance.address)
+    web3.currentProvider.publicConfigStore.on('update', (info) => {
+      this.account = info.selectedAddress.toLowerCase()
+    })
   },
   /*
   mounted () {
@@ -119,6 +130,8 @@ export default {
       })
     },
     startProject () {
+      this.isLoading = true
+
       var limit = new Date(this.form.date)
       var contract
       var projectId
@@ -142,7 +155,7 @@ export default {
           // get registered address from firestore
           var registerdAddress = doc.data().address
           // If using wallet is not registered, throw error
-          if (this.account !== registerdAddress) {
+          if (this.account !== registerdAddress.toLowerCase()) {
             this.errorMessage = '登録したウォレットを使用してください'
             throw new Error('Connected wallet address is not registered.')
           }
@@ -173,7 +186,10 @@ export default {
           return db.collection('projects').doc(projectId.toString())
             .set({description: this.form.content})
         })
-        .then(() => this.$router.replace({ name: 'Project', params: { projectId: projectId }}))
+        .then(() => {
+          this.isLoading = false
+          this.$router.replace({ name: 'Project', params: { projectId: projectId }})
+        })
         .catch((error) => console.error(error))
     }
   }
