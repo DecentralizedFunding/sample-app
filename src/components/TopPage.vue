@@ -1,32 +1,46 @@
 <template>
   <div class="app">
-    <h2>Decentralized Funding</h2>
-    <div v-if="!isLoggedIn">
-      <b-button :to="{ name: 'SignUp' }" size="sm" variant="outline-primary">Sign up</b-button>
-      <b-button :to="{ name: 'Login' }" size="sm" variant="outline-primary">Log in</b-button>
+    <div class="carousel mb-2">
+      <b-carousel id="carousel" background="#bbb" v-model="slide" @sliding-start="onSlideStart" @sliding-end="onSlideEnd">
+        <b-carousel-slide caption="Decentralized" text="on Ethereum Network" img-src="https://placeimg.com/420/280/arch"></b-carousel-slide>
+        <b-carousel-slide caption="Funding" text="on Ethereum Network" img-src="https://placeimg.com/420/280/nature"></b-carousel-slide>
+      </b-carousel>
     </div>
-    <div v-else>
-      <b-link :to="{ name: 'MyPage' }" router-tag="b-button">My Page</b-link>
-      <b-button @click="signOut" variant="dark">Sign Out</b-button>
-    </div>
-    <p v-if="account">アカウント: {{ account }}</p>
-    <p v-if="!account">アカウントが見つからないよ</p>
-    <b-button :to="{ name: 'StartProject' }" variant="primary">Start Project</b-button>
     <div class="project-box" v-for="project in projects" :key="project.id">
-      <router-link :to="{ name: 'Project', params: { projectId: project.id }}">
-        <b-card :img-src="`${project.image}`" img-alt="Image" img-top tag="article">
-          <h4>{{ project.title }}</h4>
-          <p>目標金額 {{ project.goal }} ETH</p>
-          <b-progress :value="project.funded" :max="project.goal" show-progress animated></b-progress>
-          <p v-if="project.left.days > 0">残り {{ project.left.days }} 日</p>
-          <p v-else-if="project.left.hours > 0">残り {{ project.left.hours }} 時間</p>
-          <p v-else-if="project.left.mitunes >= 0">残り {{ project.left.mitunes }} 分</p>
-          <p v-else-if="project.left.minutes < 0">終了</p>
+      <b-link :to="{ name: 'Project', params: { projectId: project.id }}">
+        <b-card class="my-3" :img-src="`${project.image}`" img-alt="Image" img-top tag="article">
+          <h2 class="h4">{{ project.title }}</h2>
+          <b-row align-v="center">
+            <b-col>
+              <b-progress class="mb-1" :value="project.funded" :max="project.goal"></b-progress>
+            </b-col>
+            <b-col class="percent pl-0" cols="auto">{{ project.percent }}%</b-col>
+          </b-row>
+          <b-row align-h="between">
+            <b-col>
+              <i class="fas fa-flag-checkered"></i>
+              {{ project.goal }} ETH
+            </b-col>
+            <b-col cols="auto" v-if="project.left.days > 1">
+              <i class="far fa-clock"></i>
+              {{ project.left.days }} days left
+            </b-col>
+            <b-col cols="auto" v-else-if="project.left.hours > 1">
+              <i class="far fa-clock"></i>
+              {{ project.left.hours }} hours left
+            </b-col>
+            <b-col cols="auto" v-else-if="project.left.mitunes >= 0">
+              <i class="far fa-clock"></i>
+              {{ project.left.mitunes }} mitunes left
+            </b-col>
+            <b-col cols="auto" v-else-if="project.left.minutes < 0">Ended</b-col>
+          </b-row>
         </b-card>
-      </router-link>
+      </b-link>
     </div>
-    <p v-if="contractAddress">コントラクトアドレス: {{ contractAddress }}</p>
-    <p v-if="!contractAddress">コントラクトアドレスが見つからないよ</p>
+    <b-link class="create-button bg-primary text-white d-flex justify-content-center align-items-center fixed-bottom mr-3 mb-3" :to="{ name: 'StartProject' }">
+      <i class="fas fa-plus fa-lg"></i>
+    </b-link>
   </div>
 </template>
 
@@ -51,9 +65,10 @@ export default {
   data () {
     return {
       contractAddress: null,
-      account: null,
       projects: [],
-      isLoggedIn: false
+      isLoggedIn: false,
+      slide: 0,
+      sliding: null
     }
   },
   beforeCreate () {
@@ -78,6 +93,7 @@ export default {
     web3.eth.getCoinbase()
       .then((coinbase) => DFcore.defaults({from: coinbase}))
 
+/*
     web3.eth.getAccounts()
       .then((accounts) => this.account = accounts[0])
       .catch(console.log)
@@ -87,7 +103,7 @@ export default {
     })
 
     DFcore.deployed()
-      .then((instance) => this.contractAddress = instance.address)
+      .then((instance) => this.contractAddress = instance.address)*/
   },
   beforeMount () {
     var contract
@@ -131,6 +147,7 @@ export default {
             'title': projects[i][1],
             'goal': Number(goal),
             'funded': Number(funded),
+            'percent': Number(funded) / Number(goal) * 100,
             'limitTime': date.toLocaleDateString('ja-JP'),
             'supporters': projects[i][5],
             'left': {
@@ -143,6 +160,12 @@ export default {
       })
   },
   methods: {
+    onSlideStart (slide) {
+      this.sliding = true
+    },
+    onSlideEnd (slide) {
+      this.sliding = false
+    },
     signOut () {
       firebase.auth().signOut()
         .then(() => location.reload())
@@ -153,25 +176,40 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-article, .project-box {
-  width: 320px;
+.address {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-article:hover {
-  box-shadow: 0 0 2px 0 #007bff;
+.carousel {
+  margin-left: -8px;
+  margin-right: -8px;
+  text-shadow: 1px 1px 2px #333;
 }
 
-.project-box {
-  border: none;
+.create-button {
+  border-radius: 50%;
+  height: 48px;
+  left:inherit;
+  width: 48px;
+}
+
+.create-button:hover {
+  text-decoration: none;
+}
+
+.percent {
+  font-size: 1rem;
+}
+
+.progress {
+  height: 0.5rem;
 }
 
 .project-box a, .project-box *:hover {
   color: inherit;
   text-decoration: none;
-}
-
-.project-box #title {
-  font-weight: bold;
 }
 
 ul {
