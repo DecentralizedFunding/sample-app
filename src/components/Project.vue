@@ -1,20 +1,46 @@
 <template>
   <div class="app">
-    <h2>Project page</h2>
-    <h3>{{ project.title }}</h3>
-    <b-img :src="`${project.image}`" width="320" height="240" blank-color="#bbb" fluid alt="Project image" />
-    <p>{{ project.description }}</p>
-    <p>目標金額 {{ project.goal }} ETH</p>
-    <p>集まった金額 {{ project.funded }} ETH</p>
-    <p>支援期限 {{ project.date }}</p>
-    <p v-show="project.supporters.length > 0">{{ project.supporters }}</p>
-    <div v-show="canDeposit">
-      <b-form inline>
-        <b-form-input v-model="pledge" placeholder="ETH"></b-form-input>
-        <b-button @click="depositInProject(project.id)" variant="primary">支援する</b-button>
-      </b-form>
-    </div>
-    <b-link :to="{ name: 'TopPage' }">← トップに戻る</b-link>
+    <b-container>
+      <b-img class="mt-2 mb-4" :src="`${project.image}`" width="320" height="240" blank-color="#bbb" fluid alt="Project image" />
+      <b-card class="mt-4">
+        <h2 class="h3">{{ project.title }}</h2>
+        <p>{{ project.description }}</p>
+        <b-row align-v="center">
+          <b-col>
+            <b-progress class="mb-1" :value="project.funded" :max="project.goal"></b-progress>
+          </b-col>
+          <b-col class="percent pl-0" cols="auto">{{ project.percent }}%</b-col>
+        </b-row>
+        <b-row class="mt-3">
+          <b-col>
+            <b-row class="justify-content-center text-secondary" align-v="center">
+              <i class="fab fa-ethereum"></i>&nbsp;Funded
+            </b-row>
+            <b-row class="justify-content-center" align-v="center">
+              <span class="h3">{{ project.funded }}</span>&nbsp;ETH
+            </b-row>
+          </b-col>
+          <b-col>
+            <b-row class="justify-content-center text-secondary">
+              <i class="fas fa-flag-checkered"></i>&nbsp;Goal
+            </b-row>
+            <b-row class="justify-content-center" align-v="end">
+              <span style="height: 2.5rem;">{{ project.goal }}&nbsp;ETH</span>
+            </b-row>
+          </b-col>
+        </b-row>
+        <b-row class="my-2 justify-content-center text-info">
+          <i class="far fa-clock"></i>&nbsp;Time limit {{ project.date }}
+        </b-row>
+        <p v-show="project.supporters.length > 0">{{ project.supporters }}</p>
+        <div v-show="canDeposit">
+          <b-form inline>
+            <b-form-input v-model="pledge" placeholder="ETH"></b-form-input>
+            <b-button @click="depositInProject(project.id)" variant="primary">支援する</b-button>
+          </b-form>
+        </div>
+      </b-card>
+    </b-container>
   </div>
 </template>
 
@@ -41,8 +67,9 @@ export default {
         image: null,
         title: null,
         description: null,
-        goal: null,
-        funded: null,
+        goal: 0,
+        funded: 0,
+        percent: 0,
         data: null,
         supporters: [],
         owner: null
@@ -86,8 +113,9 @@ export default {
 
         this.project.id = project[0].toNumber()
         this.project.title = project[1]
-        this.project.goal = web3.utils.fromWei(web3.utils.toBN(project[2]))
-        this.project.funded = web3.utils.fromWei(web3.utils.toBN(project[3]))
+        this.project.goal = Number(web3.utils.fromWei(web3.utils.toBN(project[2]), 'ether'))
+        this.project.funded = Number(web3.utils.fromWei(web3.utils.toBN(project[3]), 'ether'))
+        this.project.percent = Math.floor(this.project.funded / this.project.goal * 100)
         this.project.date = new Date(unixTime).toLocaleDateString('ja-JP')
         this.project.supporters = project[5]
 
@@ -118,10 +146,10 @@ export default {
           if (!error) {
             var project = result.args
             var id = project.id.toNumber()
-            var funded = web3.utils.fromWei(web3.utils.toBN(project.funded))
-            var pledged = web3.utils.fromWei(web3.utils.toBN(project.pledged))
+            var funded = Number(web3.utils.fromWei(web3.utils.toBN(project.funded)))
+            var pledged = Number(web3.utils.fromWei(web3.utils.toBN(project.pledged)))
             // Check whether it is a new event or not
-            if (Number(this.project.funded) === Number(funded) - Number(pledged)) {
+            if (this.project.funded === funded - pledged) {
               this.project.funded = funded
             }
           }
@@ -160,5 +188,12 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+.percent {
+  font-size: 0.9rem;
+  width: 68px;
+}
 
+.progress {
+  height: 0.6rem;
+}
 </style>
