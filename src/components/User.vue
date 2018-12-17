@@ -1,8 +1,23 @@
 <template>
   <div class="app">
-    <h2>User Page</h2>
-    <b-link :href="`https://twitter.com/${twitter}`">@{{ twitter }}</b-link>
-    <p>user: {{ userName }}</p>
+    <b-container class="profile py-3">
+      <b-row class="justify-content-center mt-5 mb-3">
+        <b-img class="profile_image" :src="`${db.image}`" width="96" height="96" blank-color="#bbb" alt="Icon" />
+      </b-row>
+      <b-row class="justify-content-center" align-v="center">
+        @{{ userName }}
+      </b-row>
+      <b-row class="justify-content-center">
+        <span class="address">
+          {{ this.$route.params.address }}
+        </span>
+      </b-row>
+    </b-container>
+    <b-alert class="my-2" show variant="primary">
+      <p class="font-weight-bold">Authenticated Account.</p>
+      Twitter:<b-link :href="`https://twitter.com/${twitter}`">@{{ twitter }}</b-link>
+    </b-alert>
+    <h2 class="h4 pt-4 pb-2">Projects</h2>
     <div class="project-box" v-for="project in projects" :key="project.id">
       <router-link :to="{ name: 'Project', params: { projectId: project.id }}">
         <b-card tag="article">
@@ -38,6 +53,8 @@ import { db, storage } from '../firebaseInit'
 
 var DFcore = contract(artifacts)
 
+var storageRef = storage.ref()
+
 export default {
   name: 'User',
   data () {
@@ -45,7 +62,12 @@ export default {
       projects: [],
       twitter: null,
       userName: null,
-      credientialinfo: []
+      credientialinfo: [],
+      db: {
+        addres: null,
+        image: null,
+        userName: null
+      }
     }
   },
   created () {
@@ -82,6 +104,10 @@ export default {
         } else {
           throw new Error('No such document.')
         }
+        return storageRef.child(`images/users/${this.userName}`).getDownloadURL()
+      })
+      .then((url) => {
+        this.db.image = url
       })
       .catch(console.error)
   },
@@ -166,12 +192,32 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+
 article, .project-box {
   width: 320px;
 }
 
 article:hover {
   box-shadow: 0 0 2px 0 #007bff;
+}
+
+.address {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 192px;
+  white-space: nowrap;
+}
+
+.profile {
+  background-color: #ccc;
+  height: 256px;
+  margin-left: -15px;
+  margin-right: -15px;
+  width: initial;
+}
+
+.profile_image {
+  border-radius: 50%;
 }
 
 .project-box {
@@ -185,5 +231,9 @@ article:hover {
 
 .project-box #title {
   font-weight: bold;
+}
+
+.profile_image {
+  border-radius: 50%;
 }
 </style>
