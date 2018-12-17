@@ -181,6 +181,12 @@ export default {
         })
         .then(() => this.pledge = null)
         .catch((error) => console.error(error))
+    },
+    success_withdraw (id) {
+      return DFcore.deployed()
+        .then((instancd) => {
+          this
+        })
     }
   }
 }

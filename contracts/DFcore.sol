@@ -20,6 +20,14 @@ contract Crediential is ERC721Full {
     super._burn(msg.sender, _tokenId);
   }
 
+  function supportTokenid(address _owner) public view returns (uint[]) {
+    uint[] memory tokenlist = new uint[](balanceOf(_owner));
+    for (uint i = 0; i < balanceOf(_owner); i++) {
+      tokenlist[i] = tokenOfOwnerByIndex(_owner, i);
+    }
+    return tokenlist;
+  }
+
 }
 
 contract DFcore is Ownable, Crediential {
@@ -59,8 +67,19 @@ contract DFcore is Ownable, Crediential {
   function deposit(uint _id, string _URI) public payable { // 箱にETHを投げる関数
     require(PJs[_id].amount < PJs[_id].goal);
     require(now <= PJs[_id].limittime);
+    require(msg.sender != PJToOwner[_id]);
+    bool flag = false;
+    //PJs[_id].supportersArrayで msg.valueがないかどうかループを回して、フラグを立てておく
+    //フラグが立っている場合は、 PJs[_id].supportersArray.push(msg.sender)を実行させない
+    for (uint i = 0; i < PJs[_id].supportersArray.length; i++) {
+      if (PJs[_id].supportersArray[i] == msg.sender) {
+        flag = true;
+      }
+    }
     PJs[_id].amount = PJs[_id].amount + msg.value;
-    PJs[_id].supportersArray.push(msg.sender);
+    if (flag == false) {
+        PJs[_id].supportersArray.push(msg.sender);
+    }
     PJs[_id].funds[msg.sender] += msg.value;
     mint(_URI);
     emit Deposit(PJs[_id].id, PJs[_id].amount, msg.value, PJs[_id].supportersArray);
