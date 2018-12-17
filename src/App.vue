@@ -6,7 +6,7 @@
           <i class="fas fa-bars fa-lg"></i>
         </b-link>
         <b-link :to="{ name: 'TopPage' }" class="flex-grow-1">
-          <h1 class="text-dark">DF</h1>
+          <h1 class="text-dark h2">NextFunding</h1>
         </b-link>
         <b-link v-if="!isLoggedIn" :to="{ name: 'Login' }">Log in</b-link>
         <b-link v-else :to="{ name: 'MyPage' }">
@@ -61,11 +61,9 @@ export default {
 }
 
 .top-bar h1 {
-  /*
   background: linear-gradient(to top, #30cfd0, #330867);
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;*/
-  font-size: 2rem;
+  -webkit-text-fill-color: transparent;
   margin-bottom: 0;
 }
 
