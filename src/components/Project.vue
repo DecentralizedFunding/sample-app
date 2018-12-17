@@ -1,8 +1,18 @@
 <template>
   <div class="app">
-    <b-container>
-      <b-img class="mt-2 mb-4" :src="`${project.image}`" width="320" height="240" blank-color="#bbb" fluid alt="Project image" />
-      <b-card class="mt-4">
+    <b-img class="top-image mt-2" :src="`${project.image}`" alt="Project image" />
+    <div class="sns-bar px-4">
+      <b-row class="pb-4" align-v="end">
+        <b-col class="pr-0" cols="auto">
+          <b-img class="owner-icon" width="48" height="48" :src="`${project.ownerImage}`" alt="Owner image" />
+        </b-col>
+        <b-col class="h5" style="color: #ddd;">
+          @{{ project.ownerName }}
+        </b-col>
+      </b-row>
+    </div>
+    <b-container class="pb-5">
+      <b-card>
         <h2 class="h3">{{ project.title }}</h2>
         <p>{{ project.description }}</p>
         <b-row align-v="center">
@@ -13,7 +23,7 @@
         </b-row>
         <b-row class="mt-3">
           <b-col>
-            <b-row class="justify-content-center text-secondary" align-v="center">
+            <b-row class="info-tag justify-content-center text-secondary" align-v="center">
               <i class="fab fa-ethereum"></i>&nbsp;Funded
             </b-row>
             <b-row class="justify-content-center" align-v="center">
@@ -21,18 +31,27 @@
             </b-row>
           </b-col>
           <b-col>
-            <b-row class="justify-content-center text-secondary">
+            <b-row class="info-tag justify-content-center text-secondary" align-v="center">
               <i class="fas fa-flag-checkered"></i>&nbsp;Goal
             </b-row>
             <b-row class="justify-content-center" align-v="end">
-              <span style="height: 2.5rem;">{{ project.goal }}&nbsp;ETH</span>
+              <span style="margin-top: 0.4rem;">{{ project.goal }}&nbsp;ETH</span>
             </b-row>
           </b-col>
         </b-row>
-        <b-row class="my-2 justify-content-center text-info">
+        <b-row class="my-2 justify-content-center text-info font-weight-bold" align-v="center">
           <i class="far fa-clock"></i>&nbsp;Time limit {{ project.date }}
         </b-row>
-        <p v-show="project.supporters.length > 0">{{ project.supporters }}</p>
+        <b-col>
+          <b-row class="mt-4 ml-1 mb-1 text-secondary" align-v="center">
+            <span class="info-tag mr-2"><i class="fas fa-users"></i>&nbsp;Supporters</span>{{ project.supporters.length }}
+          </b-row>
+        </b-col>
+        <b-list-group class="mb-4 address-list" flush>
+          <b-list-group-item class="text-info" :to="{ name: 'User', params: { address: supporter}}" v-for="supporter in project.supporters">
+            {{ supporter }}
+          </b-list-group-item>
+        </b-list-group>
         <div v-show="canDeposit">
           <b-form inline>
             <b-form-input v-model="pledge" placeholder="ETH"></b-form-input>
@@ -41,6 +60,9 @@
         </div>
       </b-card>
     </b-container>
+    <b-row class="fixed-bottom justify-content-center mb-3">
+      <b-button variant="primary">Support</b-button>
+    </b-row>
   </div>
 </template>
 
@@ -51,7 +73,7 @@ import contract from 'truffle-contract'
 import artifacts from '../../build/contracts/DFcore.json'
 import firebase from 'firebase'
 import { db, storage } from '../firebaseInit'
-import { sha256, sha224 } from 'js-sha256'
+import { sha256 } from 'js-sha256'
 
 var DFcore = contract(artifacts)
 
@@ -62,6 +84,7 @@ export default {
   data () {
     return {
       account: null,
+      errorMessage: null,
       project: {
         id: null,
         image: null,
@@ -72,7 +95,9 @@ export default {
         percent: 0,
         data: null,
         supporters: [],
-        owner: null
+        owner: null,
+        ownerImage: null,
+        ownerName: null
       },
       // The amount of depositing by an user
       pledge: null,
@@ -130,7 +155,17 @@ export default {
         this.project.description = doc.data().description
         return storageRef.child(`images/projects/${this.project.id}`).getDownloadURL()
       })
-      .then((url) => this.project.image = url)
+      .then((url) => {
+        this.project.image = url
+        return db.collection('users').where('lowerCaseAddress', '==', this.project.owner).get()
+      })
+      .then((querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+          this.project.ownerName = doc.data().name
+        })
+        return storageRef.child(`images/users/${this.project.ownerName}`).getDownloadURL()
+      })
+      .then((url) => this.project.ownerImage = url)
       .catch(console.error)
 
     web3.currentProvider.publicConfigStore.on('update', (info) => {
@@ -141,6 +176,14 @@ export default {
   mounted () {
     DFcore.deployed()
       .then((instance) => {
+        try {
+          if (this.project.owner === this.account) {
+            throw new Error('This address is same to owner\'s.')
+          }
+        } catch (error) {
+          this.errorMessage = 'This address is same to owner\'s.'
+        }
+        
         var deposit = instance.Deposit()
         deposit.watch((error, result) => {
           if (!error) {
@@ -162,7 +205,7 @@ export default {
         .then((accounts) => {
           // Reload the page if the user switch Metamask account
           if (this.account !== accounts[0].toLowerCase()) {
-            alert('アカウントが切り替わったため、再読み込みします')
+            alert('Reload this page because of switching Metamask account')
             location.reload()
           }
         })
@@ -181,12 +224,6 @@ export default {
         })
         .then(() => this.pledge = null)
         .catch((error) => console.error(error))
-    },
-    success_withdraw (id) {
-      return DFcore.deployed()
-        .then((instancd) => {
-          this
-        })
     }
   }
 }
@@ -194,6 +231,20 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+.address-list a {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.info-tag {
+  font-size: 0.8rem;
+}
+
+.owner-icon {
+  border-radius: 50%;
+}
+
 .percent {
   font-size: 0.9rem;
   width: 68px;
@@ -201,5 +252,20 @@ export default {
 
 .progress {
   height: 0.6rem;
+}
+
+.sns-bar {
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  height: 64px;
+  margin-bottom: -48px;
+  margin-left: -15px;
+  margin-right: -15px;
+  position: relative;
+  top: -64px;
+}
+
+.top-image {
+  margin-left: -15px;
+  width: calc(100% + 30px);
 }
 </style>
