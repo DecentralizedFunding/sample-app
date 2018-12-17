@@ -85,7 +85,7 @@ export default {
       projects: [],
       user: null,
       db: {
-        addres: null,
+        address: null,
         image: null,
         userName: null
       }
