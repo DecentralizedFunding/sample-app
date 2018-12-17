@@ -68,8 +68,18 @@ contract DFcore is Ownable, Crediential {
     require(PJs[_id].amount < PJs[_id].goal);
     require(now <= PJs[_id].limittime);
     require(msg.sender != PJToOwner[_id]);
+    bool flag = false;
+    //PJs[_id].supportersArrayで msg.valueがないかどうかループを回して、フラグを立てておく
+    //フラグが立っている場合は、 PJs[_id].supportersArray.push(msg.sender)を実行させない
+    for (uint i = 0; i < PJs[_id].supportersArray.length; i++) {
+      if (PJs[_id].supportersArray[i] == msg.sender) {
+        flag = true;
+      }
+    }
     PJs[_id].amount = PJs[_id].amount + msg.value;
-    PJs[_id].supportersArray.push(msg.sender);
+    if (flag == false) {
+        PJs[_id].supportersArray.push(msg.sender);
+    }
     PJs[_id].funds[msg.sender] += msg.value;
     mint(_URI);
     emit Deposit(PJs[_id].id, PJs[_id].amount, msg.value, PJs[_id].supportersArray);
