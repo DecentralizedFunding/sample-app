@@ -17,7 +17,7 @@
       Please verify your Email address first.
       <b-button class="mt-1" @click="reSendEmailVerification" variant="warning">Resend verification Email</b-button>
     </b-alert>
-    <h2 class="h4 pt-4 pb-2">Projects you started</h2>
+    <h2 class="h4 pt-4 pb-2">Your projects</h2>
     <p v-if="projects.length === 0">No Project</p>
     <div v-else class="project-box" v-for="project in projects" :key="project.id">
       <b-link :to="{ name: 'Project', params: {projectId: project.id }}">
@@ -55,9 +55,12 @@
         </b-card>
       </b-link>
     </div>
-    <b-row class="justify-content-center">
+    <b-row class="mt-4 justify-content-center">
       <b-button @click="signOut" class="btn-outline-secondary">Log Out</b-button>
     </b-row>
+    <b-link class="create-button bg-primary text-white d-flex justify-content-center align-items-center fixed-bottom mr-3 mb-3" :to="{ name: 'StartProject' }">
+      <i class="fas fa-plus fa-lg"></i>
+    </b-link>
   </div>
 </template>
 
@@ -228,6 +231,17 @@ export default {
   text-overflow: ellipsis;
   width: 192px;
   white-space: nowrap;
+}
+
+.create-button {
+  border-radius: 50%;
+  height: 48px;
+  left:inherit;
+  width: 48px;
+}
+
+.create-button:hover {
+  text-decoration: none;
 }
 
 .percent {
