@@ -48,8 +48,8 @@
         </div>
       </b-form>
     </b-card>
-    <b-alert class="my-2" v-if="isSent" show variant="success">
-      <p>We send the mail to {{ form.email }}</p>
+    <b-alert class="my-2" style="overflow: hidden; text-overflow: ellipsis;" v-if="isSent" show variant="success">
+      We send the mail to {{ form.email }}
     </b-alert>
     <b-alert class="my-2" v-if="isSent" show variant="info">
       <p>If you cannot receive the email, we send it again.</p>
