@@ -18,6 +18,7 @@
       Twitter:<b-link :href="`https://twitter.com/${twitter}`">@{{ twitter }}</b-link>
     </b-alert>
     <h2 class="h4 pt-4 pb-2">Projects</h2>
+    <p v-if="projects.length === 0">No Project</p>
     <div class="project-box" v-for="project in projects" :key="project.id">
       <router-link :to="{ name: 'Project', params: { projectId: project.id }}">
         <b-card tag="article">
