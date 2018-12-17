@@ -16,6 +16,10 @@
         </b-card>
       </router-link>
     </div>
+    <div>
+      <p>ここでERC721参照テストをしたい</p>
+      <p>{{ credientialinfo }}</p>
+    </div>
     <b-link :to="{ name: 'TopPage' }">トップへ戻る</b-link>
   </div>
 </template>
@@ -40,7 +44,8 @@ export default {
     return {
       projects: [],
       twitter: null,
-      userName: null
+      userName: null,
+      credientialinfo: []
     }
   },
   created () {
@@ -120,6 +125,39 @@ export default {
           })
         }
       })
+      .then(() => {
+        return contract.supportTokenid(this.account)
+      })
+      .then((list) => {
+        var uripromises = []
+        list.forEach((id) => {
+          uripromises.push(contract.tokenURI(id.c[0]))
+        })
+        projectLength = uripromises.length
+        return Promise.all(uripromises)
+      })
+      .then((projects) => {
+        console.log(projects)
+        var credientials = []
+        projects.forEach((project) => {
+          console.log(project)
+          credientials.push(db.collection('nftdata').doc(project).get())
+        })
+        return Promise.all(credientials)
+      })
+      .then((result) => {
+        var credata = []
+        result.forEach((item) => {
+          credata.push(item.data())
+        })
+        return credata
+      })
+      .then((credata) => {
+        credata.forEach((data) => {
+          this.credientialinfo.push(data["Metadata"][0])
+        })
+      })
+
   },
   methods: {
   }
