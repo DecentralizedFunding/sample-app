@@ -153,7 +153,9 @@ export default {
         return credata
       })
       .then((credata) => {
-        console.log(credata)
+        credata.forEach((data) => {
+          this.credientialinfo.push(data["Metadata"][0])
+        })
       })
 
   },
