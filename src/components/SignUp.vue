@@ -213,6 +213,7 @@ export default {
           .then(() => {
             return db.collection('users').doc(user.uid).set({
               address: this.form.address,
+              lowerCaseAddress: this.form.address.toLowerCase(),
               name: this.form.userName,
               twitter: this.form.twitter,
               twitterVerified: this.isVerified
