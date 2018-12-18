@@ -14,8 +14,8 @@
       </b-row>
     </b-container>
     <b-alert class="my-2" show variant="primary">
-      <p class="font-weight-bold">Authenticated Account.</p>
-      Twitter:<b-link :href="`https://twitter.com/${twitter}`">@{{ twitter }}</b-link>
+      <p class="font-weight-bold mb-0">Authenticated Account.</p>
+      Twitter: <b-link :href="`https://twitter.com/${twitter}`">@{{ twitter }}</b-link>
     </b-alert>
     <h2 class="h4 pt-4 pb-2">Projects</h2>
     <div class="project-box" v-for="project in projects" :key="project.id">
