@@ -55,7 +55,7 @@ contract DFcore is Ownable, Crediential {
   }
 
   function makePJ(string _title, uint _goal, uint _limittime) public {  // クラウドファンディングのETHを貯める箱を作る関数
-    /* uint _limittime = now + 30 days; //とりあえずデフォルトで期限を30日と設定 */
+    require(now <= _limittime);
     address[] memory _supportersArray;
     uint _id = PJs.length;
     PJs.push(PJ(_id, _title, _goal, 0, _limittime, _supportersArray));
