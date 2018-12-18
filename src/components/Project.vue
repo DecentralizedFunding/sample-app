@@ -68,12 +68,7 @@
       </b-card>
     </b-container>
     <b-row class="fixed-bottom justify-content-center mb-3" v-show="canDeposit">
-      <b-button v-b-toggle.collapse1 variant="primary">Support</b-button>
-      <b-collapse id="collapse1" class="mt-2">
-        <b-card>
-          content
-        </b-card>
-      </b-collapse>
+      <b-button variant="primary">Support</b-button>
     </b-row>
     <transition name="slide-in-from-top">
       <div v-show="openDepositForm" class="depositForm">
