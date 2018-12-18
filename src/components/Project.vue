@@ -1,13 +1,20 @@
 <template>
   <div class="app">
+    <b-container class="alert-error">
+      <transition name="slide-in-from-top">
+        <b-alert class="mt-3" :show="errorMessage !== null" variant="danger">{{ errorMessage }}</b-alert>
+      </transition>
+    </b-container>
     <b-img class="top-image mt-2" :src="`${project.image}`" alt="Project image" />
     <div class="sns-bar px-4">
       <b-row class="pb-4" align-v="end">
         <b-col class="pr-0" cols="auto">
           <b-img class="owner-icon" width="48" height="48" :src="`${project.ownerImage}`" alt="Owner image" />
         </b-col>
-        <b-col class="h5" style="color: #ddd;">
-          @{{ project.ownerName }}
+        <b-col class="h5">
+          <b-link style="color: #ddd;" :to="{ name: 'User', params: { address: project.owner }}">
+            @{{ project.ownerName }}
+          </b-link>
         </b-col>
       </b-row>
     </div>
@@ -48,7 +55,7 @@
           </b-row>
         </b-col>
         <b-list-group class="mb-4 address-list" flush>
-          <b-list-group-item class="text-info" :to="{ name: 'User', params: { address: supporter}}" v-for="supporter in project.supporters">
+          <b-list-group-item class="text-info" :to="{ name: 'User', params: { address: supporter }}" v-for="supporter in project.supporters">
             {{ supporter }}
           </b-list-group-item>
         </b-list-group>
@@ -60,9 +67,14 @@
         </div>
       </b-card>
     </b-container>
-    <b-row class="fixed-bottom justify-content-center mb-3">
+    <b-row class="fixed-bottom justify-content-center mb-3" v-show="canDeposit">
       <b-button variant="primary">Support</b-button>
     </b-row>
+    <transition name="slide-in-from-top">
+      <div v-show="openDepositForm" class="depositForm">
+
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -99,6 +111,7 @@ export default {
         ownerImage: null,
         ownerName: null
       },
+      openDepositForm: false,
       // The amount of depositing by an user
       pledge: null,
       canDeposit: true
@@ -176,14 +189,6 @@ export default {
   mounted () {
     DFcore.deployed()
       .then((instance) => {
-        try {
-          if (this.project.owner === this.account) {
-            throw new Error('This address is same to owner\'s.')
-          }
-        } catch (error) {
-          this.errorMessage = 'This address is same to owner\'s.'
-        }
-        
         var deposit = instance.Deposit()
         deposit.watch((error, result) => {
           if (!error) {
@@ -194,6 +199,7 @@ export default {
             // Check whether it is a new event or not
             if (this.project.funded === funded - pledged) {
               this.project.funded = funded
+              this.project.supporters = project.supporters
             }
           }
         })
@@ -211,11 +217,44 @@ export default {
         })
     },
     depositInProject (id) {
+      var user
+      try {
+        if (this.project.owner === this.account) {
+          throw new Error('Same to owner\'s')
+        }
+      } catch (error) {
+        switch (error.message) {
+          case 'Same to owner\'s':
+            this.showError('This address is same to owner\'s.')
+            break
+          default:
+            console.log(error)
+        }
+      }
+
       var json = [{"id":String(id),"pledge":String(web3.utils.toWei(this.pledge)),"supporter":this.account}]
       var uri = sha256(JSON.stringify(json[0]))
-      return DFcore.deployed()
+      new Promise((resolve, reject) => {
+        firebase.auth().onAuthStateChanged((res) => {
+          user = res
+          if (!user) {
+            reject(new Error('Need to log in'))
+            return
+          }
+        })
+      })
+      .then(() => {
+        return DFcore.deployed()
+      })
         .then((instance) => {
           this.checkAccount()
+          return db.collection('users').doc(user.uid).get()
+        })
+        .then((doc) => {
+          // Check whether wallet address is registered or not
+          if (doc.data().lowerCaseAddress !== this.account) {
+            throw new Error('Not registered')
+          }
           return instance.deposit(id, uri, {gas: 1000000, value: web3.utils.toWei(this.pledge), from: this.account})
         }).then(() => {
           return db.collection('nftdata').doc(uri).set({
@@ -223,7 +262,24 @@ export default {
           })
         })
         .then(() => this.pledge = null)
-        .catch((error) => console.error(error))
+        .catch((error) => {
+          switch (error.message) {
+            case 'Not registered':
+              this.showError('Use registered wallet.')
+              break
+            case 'Need to log in':
+              this.showError('You need to log in if you want to support this project.')
+              break
+            default:
+              console.error(error)
+          }
+        })
+    },
+    showError (message) {
+      this.errorMessage = message
+      setTimeout(() => {
+        this.errorMessage = null
+      }, 3000)
     }
   }
 }
@@ -235,6 +291,17 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.alert-error {
+  left: 0;
+  position: fixed;
+  z-index: 2000;
+}
+
+.depositForm {
+  position: fixed;
+  z-index: 2000;
 }
 
 .info-tag {
@@ -252,6 +319,20 @@ export default {
 
 .progress {
   height: 0.6rem;
+}
+
+.slide-in-from-top-enter-active {
+  transition: all .3s ease;
+}
+
+.slide-in-from-top-leave-active {
+  transition: all .3s ease;
+}
+
+.slide-in-from-top-enter, .slide-in-from-top-leave-to
+/* .slide-fade-leave-active below version 2.1.8 */ {
+  transform: translateY(-100px);
+  opacity: 0;
 }
 
 .sns-bar {
