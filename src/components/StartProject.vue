@@ -18,7 +18,7 @@
           </b-input-group>
         </b-form-group>
         <b-form-group label="Time limit">
-            <b-form-input v-model="form.date" type="date" required></b-form-input>
+          <b-form-input v-model="form.date" type="date" required></b-form-input>
         </b-form-group>
         <b-row class="my-2 justify-content-center" v-show="isLoading">
           <atom-spinner :animation-duration="1000" :size="60" :color="'#007bff'" />
@@ -69,6 +69,13 @@ export default {
   computed: {
     isFormFilled () {
       return (this.form.image !== null && this.form.title !== null && this.form.content !== null && this.form.goal !== null && this.form.date !== null) ? true : false
+    },
+    isNumber () {
+      console.log(typeof this.form.goal);
+      return typeof this.form.goal === 'number' ? true : false
+    },
+    validateDate () {
+      return Date.now() < this.form.date ? true : false
     }
   },
   beforeCreate () {
@@ -137,67 +144,71 @@ export default {
       var projectId
       var uid
 
-      firebase.auth().onAuthStateChanged((user) => {
-        if (!user) {
-          this.$router.replace({ name: 'Login' })
-        } else {
-          uid = user.uid
-        }
-      })
-
       this.checkAccount()
 
-      DFcore.deployed()
-        .then((instance) => {
-          contract = instance
-          return db.collection('users').doc(uid).get()
-        }).then((doc) => {
-          // get registered address from firestore
-          var registerdAddress = doc.data().address
-          // If using wallet is not registered, throw error
-          if (this.account !== registerdAddress.toLowerCase()) {
-            throw new Error('app/address-not-registered')
+      new Promise((resolve, reject) => {
+        firebase.auth().onAuthStateChanged((user) => {
+          if (!user) {
+            this.$router.replace({ name: 'Login' })
+          } else {
+            resolve(user.uid)
           }
+        })
+      })
+      .then((result) => {
+        uid = result
+        return DFcore.deployed()
+      })
+      .then((instance) => {
+        contract = instance
+        return db.collection('users').doc(uid).get()
+      }).then((doc) => {
+        // get registered address from firestore
+        var registerdAddress = doc.data().address
+        // If using wallet is not registered, throw error
+        if (this.account !== registerdAddress.toLowerCase()) {
+          throw new Error('app/address-not-registered')
+        }
 
-          return contract.makePJ(this.form.title, web3.utils.toWei(this.form.goal, 'ether'), limit.getTime())
-        })
-        .then(() => {
-          return contract.getPJCount()
-        })
-        .then((count) => {
-          projectId = count.toNumber() - 1
-          /*
-          var extension
-          switch (this.image.type) {
-            case 'image/jpeg':
-              extension = 'jpg'
-              break
-            case 'image/png':
-              extension = 'png'
-              break
-            default:
-              throw new Error('This type of image is not adapted')
-          }*/
-          var newImageRef = storageRef.child(`images/projects/${projectId}`)
-          return newImageRef.put(this.form.image)
-        })
-        .then(() => {
-          return db.collection('projects').doc(projectId.toString())
-            .set({description: this.form.content})
-        })
-        .then(() => {
-          this.isLoading = false
-          this.$router.replace({ name: 'Project', params: { projectId: projectId }})
-        })
-        .catch((error) => {
-          switch (error.message) {
-            case 'app/address-not-registered':
-              this.errorMessage = 'Connected wallet address is not registered.'
-              break
-            default:
-              console.error(error)
-          }
-        })
+        return contract.makePJ(this.form.title, web3.utils.toWei(this.form.goal, 'ether'), limit.getTime())
+      })
+      .then(() => {
+        return contract.getPJCount()
+      })
+      .then((count) => {
+        projectId = count.toNumber() - 1
+        /*
+        var extension
+        switch (this.image.type) {
+          case 'image/jpeg':
+            extension = 'jpg'
+            break
+          case 'image/png':
+            extension = 'png'
+            break
+          default:
+            throw new Error('This type of image is not adapted')
+        }*/
+        var newImageRef = storageRef.child(`images/projects/${projectId}`)
+        return newImageRef.put(this.form.image)
+      })
+      .then(() => {
+        return db.collection('projects').doc(projectId.toString())
+          .set({description: this.form.content})
+      })
+      .then(() => {
+        this.isLoading = false
+        this.$router.replace({ name: 'Project', params: { projectId: projectId }})
+      })
+      .catch((error) => {
+        switch (error.message) {
+          case 'app/address-not-registered':
+            this.errorMessage = 'Connected wallet address is not registered.'
+            break
+          default:
+            console.error(error)
+        }
+      })
     }
   }
 }
