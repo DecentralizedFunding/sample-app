@@ -10,7 +10,7 @@
           <b-form-input v-model="form.title" type="text" placeholder="Purpose" required></b-form-input>
         </b-form-group>
         <b-form-group label="What do you want to do?">
-          <b-form-input v-model="form.content" type="text" placeholder="Description" required></b-form-input>
+          <b-form-textarea v-model="form.content" type="text" placeholder="Description" :rows="2" :max-rows="6" required></b-form-textarea>
         </b-form-group>
         <b-form-group label="Goal">
           <b-input-group append="ETH">
