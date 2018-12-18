@@ -19,19 +19,37 @@
     </b-alert>
     <h2 class="h4 pt-4 pb-2">Projects</h2>
     <div class="project-box" v-for="project in projects" :key="project.id">
-      <router-link :to="{ name: 'Project', params: { projectId: project.id }}">
-        <b-card tag="article">
-          <h4>{{ project.title }}</h4>
-          <p>目標金額 {{ project.goal }} ETH</p>
-          <b-progress :value="project.funded" :max="project.goal" show-progress animated></b-progress>
-          <p v-if="project.left.days > 0">残り {{ project.left.days }} 日</p>
-          <p v-else-if="project.left.hours > 0">残り {{ project.left.hours }} 時間</p>
-          <p v-else-if="project.left.mitunes >= 0">残り {{ project.left.mitunes }} 分</p>
-          <p v-else-if="project.left.minutes < 0">終了</p>
+      <b-link :to="{ name: 'Project', params: { projectId: project.id }}">
+        <b-card class="my-2" tag="article">
+          <h3 class="h4">{{ project.title }}</h3>
+          <b-row align-v="center">
+            <b-col>
+              <b-progress class="mb-1" :value="project.funded" :max="project.goal"></b-progress>
+            </b-col>
+            <b-col class="percent pl-0" cols="auto">{{ project.percent }}%</b-col>
+          </b-row>
+          <b-row align-h="between">
+            <b-col>
+              <i class="fas fa-flag-checkered"></i>
+              {{ project.goal }} ETH
+            </b-col>
+            <b-col cols="auto" v-if="project.left.days > 1">
+              <i class="far fa-clock"></i>
+              {{ project.left.days }} days left
+            </b-col>
+            <b-col cols="auto" v-else-if="project.left.hours > 1">
+              <i class="far fa-clock"></i>
+              {{ project.left.hours }} hours left
+            </b-col>
+            <b-col cols="auto" v-else-if="project.left.mitunes >= 0">
+              <i class="far fa-clock"></i>
+              {{ project.left.mitunes }} mitunes left
+            </b-col>
+            <b-col cols="auto" v-else-if="project.left.minutes < 0">Ended</b-col>
+          </b-row>
         </b-card>
-      </router-link>
+      </b-link>
     </div>
-    <b-link :to="{ name: 'TopPage' }">トップへ戻る</b-link>
   </div>
 </template>
 
@@ -85,10 +103,7 @@ export default {
       .then((accounts) => this.account = accounts[0])
       .catch(console.log)
 
-    DFcore.deployed()
-      .then((instance) => this.contractAddress = instance.address)
-
-    db.collection('users').where('address', '==', this.$route.params.address)
+    db.collection('users').where('lowerCaseAddress', '==', this.$route.params.address)
       .get()
       .then((querySnapshot) => {
         if (!querySnapshot.empty) {
@@ -137,6 +152,7 @@ export default {
             'title': projects[i][1],
             'goal': Number(goal),
             'funded': Number(funded),
+            'percent': Math.floor(Number(funded) / Number(goal) * 100),
             'limitTime': date.toLocaleDateString('ja-JP'),
             'supporters': projects[i][5],
             'left': {
@@ -155,11 +171,6 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-
-article, .project-box {
-  width: 320px;
-}
-
 article:hover {
   box-shadow: 0 0 2px 0 #007bff;
 }
