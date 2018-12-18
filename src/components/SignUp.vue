@@ -10,7 +10,7 @@
       <b-form @submit="onSubmit">
         <b-form-group label="Username">
           <b-form-input v-model="form.userName" type="text" placeholder="Username" required></b-form-input>
-          <b-form-invalid-feedback>This username is already token.</b-form-invalid-feedback>
+          <b-form-invalid-feedback>This username is already taken.</b-form-invalid-feedback>
         </b-form-group>
         <b-form-group label="Twitter account" description="Twitter account to use verification">
           <b-input-group prepend="@">
@@ -145,18 +145,31 @@ export default {
         }
 
         var user
+        var originalImage
         var profileImageRef
-        db.collection('users').where('name', '==', this.form.userName)
-          .get()
+        db.collection('users').where('name', '==', this.form.userName).get()
           .then((querySnapshot) => {
             // Check whether username is duplicate or not
             if (!querySnapshot.empty) {
               throw new Error('firestore/username-already-in-use')
             }
+            return db.collection('users').where('twitter', '==', this.form.twitter).get()
+          })
+          .then((querySnapshot) => {
+            if (!querySnapshot.empty) {
+              this.isPost = false
+              throw new Error('firestore/twitter-account-already-registered')
+            }
             // Connect the server for authentication
             return axios.get('/tweet?user=' + this.form.twitter)
           })
           .then((response) => {
+            // twitter account is not public
+            /*
+            if (response.data.result) {
+              throw new Error('twitter/account-not-public')
+            }
+            */
             var expectedHash = sha256(this.form.twitter + this.form.twitterPass + this.tweetTime)
             var returnedHash = response.data.result.substring(0, 64)
             // If returned hash and expected hash is equal, return true
@@ -168,15 +181,15 @@ export default {
           })
           .then((result) => {
             this.isVerified = result
-            return firebase.auth().createUserWithEmailAndPassword(this.form.email, this.form.password)
-          })
-          .then(() => {
-            user = firebase.auth().currentUser
             return axios.get('/image?user=' + this.form.twitter)
           })
           .then((response) => {
             // Get from Twitter
-            var imageUrl = response.data.result.replace('normal', '200x200')
+            originalImage = response.data.result
+            return firebase.auth().createUserWithEmailAndPassword(this.form.email, this.form.password)
+          })
+          .then(() => {
+            var imageUrl = originalImage.replace('normal', '200x200')
             // Check file extension of profile image
             /*
             var extension
@@ -205,6 +218,7 @@ export default {
             return profileImageRef.getDownloadURL()
           })
           .then((url) => {
+            user = firebase.auth().currentUser
             return user.updateProfile({
               displayName: this.form.userName,
               photoURL: url
@@ -229,27 +243,35 @@ export default {
             if (error.code !== undefined) {
               switch (error.code) {
                 case 'auth/email-already-in-use':
-                  this.errorMessage = 'このメールアドレスはすでに使われています'
+                  this.errorMessage = 'This email address is already in use.'
                   break
                 case 'auth/invalid-email':
-                  this.errorMessage = 'メールアドレスが正しくありません'
+                  this.errorMessage = 'Email address is invalid.'
                   break
                 case 'auth/operation-not-allowed':
-                  this.errorMessage = 'この操作は許可されていません'
+                  this.errorMessage = 'This operation is not allowed.'
                   break
                 case 'auth/weak-password':
-                  this.errorMessage = 'パスワードが弱すぎます'
+                  this.errorMessage = 'Password is too weak.'
                   break
                 default:
                   this.errorMessage = error
+                  console.error(error)
               }
             } else {
               switch (error.message) {
                 case 'firestore/username-already-in-use':
-                  this.errorMessage = 'このユーザー名はすでに使われています'
+                  this.errorMessage = 'This username is already taken.'
+                  break
+                case 'firestore/twitter-account-already-registered':
+                  this.errorMessage = 'This twitter account is already registered.'
+                  break
+                case 'twitter/account-not-public':
+                  this.errorMessage = 'Entered twitter account is not public.'
                   break
                 default:
                   this.errorMessage = error
+                  console.error(error)
               }
             }
           })
@@ -257,13 +279,14 @@ export default {
         this.isLoading = false
         switch (error.message) {
           case 'app/have-no-post':
-            this.errorMessage = '登録前にTwitterに認証用ツイートを投稿してください'
+            this.errorMessage = 'Post a tweet including hash before registering.'
             break
           case 'app/failed-to-authentication':
-            this.errorMessage = 'Twitter認証に失敗しました'
+            this.errorMessage = 'Failed to authenticate with twitter.'
             break
           default:
             this.errorMessage = error
+            console.error(error)
         }
       }
     },
@@ -277,7 +300,7 @@ export default {
       this.isPost = true
       this.tweetTime = Date.now()
       var message = sha256(this.form.twitter + this.form.twitterPass + this.tweetTime)
-      var url = 'https://twitter.com?status=' + message + '%0D%0A%23DecentralizedFunding'
+      var url = 'https://twitter.com?status=' + message + '%0D%0A%23NextFunding'
       window.open(url)
     }
   }
