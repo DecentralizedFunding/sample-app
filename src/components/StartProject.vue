@@ -124,7 +124,7 @@ export default {
         .then((accounts) => {
         // Reload the page if the user switch Metamask account
         if (this.account !== accounts[0].toLowerCase()) {
-          alert('アカウントが切り替わったため、再読み込みします')
+          alert('Reload this page because of switching Metamask account')
           location.reload()
         }
       })
@@ -156,8 +156,7 @@ export default {
           var registerdAddress = doc.data().address
           // If using wallet is not registered, throw error
           if (this.account !== registerdAddress.toLowerCase()) {
-            this.errorMessage = '登録したウォレットを使用してください'
-            throw new Error('Connected wallet address is not registered.')
+            throw new Error('app/address-not-registered')
           }
 
           return contract.makePJ(this.form.title, web3.utils.toWei(this.form.goal, 'ether'), limit.getTime())
@@ -190,7 +189,15 @@ export default {
           this.isLoading = false
           this.$router.replace({ name: 'Project', params: { projectId: projectId }})
         })
-        .catch((error) => console.error(error))
+        .catch((error) => {
+          switch (error.message) {
+            case 'app/address-not-registered':
+              this.errorMessage = 'Connected wallet address is not registered.'
+              break
+            default:
+              console.error(error)
+          }
+        })
     }
   }
 }
