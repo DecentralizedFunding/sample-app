@@ -228,10 +228,11 @@ export default {
             this.showError('This address is same to owner\'s.')
             break
           default:
-            console.log(error)
+            console.error(error)
         }
       }
 
+      var contract
       var json = [{"id":String(id),"pledge":String(web3.utils.toWei(this.pledge)),"supporter":this.account}]
       var uri = sha256(JSON.stringify(json[0]))
       new Promise((resolve, reject) => {
@@ -240,40 +241,43 @@ export default {
           if (!user) {
             reject(new Error('Need to log in'))
             return
+          } else {
+            resolve(user)
           }
         })
       })
       .then(() => {
         return DFcore.deployed()
       })
-        .then((instance) => {
-          this.checkAccount()
-          return db.collection('users').doc(user.uid).get()
+      .then((instance) => {
+        contract = instance
+        this.checkAccount()
+        return db.collection('users').doc(user.uid).get()
+      })
+      .then((doc) => {
+        // Check whether wallet address is registered or not
+        if (doc.data().lowerCaseAddress !== this.account) {
+          throw new Error('Not registered')
+        }
+        return contract.deposit(id, uri, {gas: 1000000, value: web3.utils.toWei(this.pledge), from: this.account})
+      }).then(() => {
+        return db.collection('nftdata').doc(uri).set({
+          Metadata: json
         })
-        .then((doc) => {
-          // Check whether wallet address is registered or not
-          if (doc.data().lowerCaseAddress !== this.account) {
-            throw new Error('Not registered')
-          }
-          return instance.deposit(id, uri, {gas: 1000000, value: web3.utils.toWei(this.pledge), from: this.account})
-        }).then(() => {
-          return db.collection('nftdata').doc(uri).set({
-            Metadata: json
-          })
-        })
-        .then(() => this.pledge = null)
-        .catch((error) => {
-          switch (error.message) {
-            case 'Not registered':
-              this.showError('Use registered wallet.')
-              break
-            case 'Need to log in':
-              this.showError('You need to log in if you want to support this project.')
-              break
-            default:
-              console.error(error)
-          }
-        })
+      })
+      .then(() => this.pledge = null)
+      .catch((error) => {
+        switch (error.message) {
+          case 'Not registered':
+            this.showError('Use registered wallet.')
+            break
+          case 'Need to log in':
+            this.showError('You need to log in if you want to support this project.')
+            break
+          default:
+            console.error(error)
+        }
+      })
     },
     showError (message) {
       this.errorMessage = message
