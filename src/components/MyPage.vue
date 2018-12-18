@@ -8,10 +8,16 @@
         @{{ db.userName }}
       </b-row>
       <b-row class="justify-content-center">
-        <span class="address">
+        <span class="address" id="address">
           {{ db.address }}
         </span>
+        <b-link @click="copyAddress" v-b-popover="'Copy!'">
+          <i class="fas fa-copy"></i>
+        </b-link>
       </b-row>
+      <b-badge variant="light" :href="`https://twitter.com/${ db.twitter }`">
+        <span style="color: #1da1f2;"><i class="fab fa-twitter"></i></span>&nbsp;{{ db.twitter }}
+      </b-badge>
     </b-container>
     <b-alert class="my-2" v-show="!isEmailVerified" show variant="warning">
       Please verify your Email address first.
@@ -87,6 +93,7 @@ export default {
       db: {
         address: null,
         image: null,
+        twitter: null,
         userName: null
       }
     }
@@ -113,18 +120,6 @@ export default {
     web3.eth.getCoinbase()
       .then((coinbase) => DFcore.defaults({from: coinbase}))
 
-    web3.eth.getAccounts()
-      .then((accounts) => this.account = accounts[0].toLowerCase())
-      .catch(console.log)
-
-    web3.currentProvider.publicConfigStore.on('update', (info) => {
-      if (this.account !== info.selectedAddress.toLowerCase()) {
-        this.getCreatedProject()
-      }
-    })
-
-    this.getCreatedProject()
-
     new Promise((resolve, reject) => {
       firebase.auth().onAuthStateChanged((user) => {
         this.user = user
@@ -140,25 +135,33 @@ export default {
       if (!querySnapshot.empty) {
         querySnapshot.forEach((doc) => {
           this.db.userName = doc.data().name
+          this.db.twitter = doc.data().twitter
           this.db.address = doc.data().address
         })
       } else {
         throw new Error('No such document.')
       }
+
+      this.getCreatedProject()
     })
     .catch(console.error)
   },
   methods: {
+    copyAddress () {
+      var tmpArea = document.createElement('textarea')
+      tmpArea.value = this.db.address
+      document.body.appendChild(tmpArea)
+      tmpArea.select()
+      document.execCommand('copy')
+      tmpArea.remove()
+    },
     getCreatedProject () {
       var contract
       var projectLength
       DFcore.deployed()
         .then((instance) => {
           contract = instance
-          return web3.eth.getAccounts()
-        })
-        .then((accounts) => {
-          return contract.getPJByOwner(accounts[0])
+          return contract.getPJByOwner(this.db.address)
         })
         .then((list) => {
           var promises = []
