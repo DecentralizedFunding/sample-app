@@ -59,22 +59,31 @@
             {{ supporter }}
           </b-list-group-item>
         </b-list-group>
-        <div v-show="canDeposit">
-          <b-form inline>
-            <b-form-input v-model="pledge" placeholder="ETH"></b-form-input>
-            <b-button @click="depositInProject(project.id)" variant="primary">支援する</b-button>
-          </b-form>
-        </div>
       </b-card>
     </b-container>
-    <b-row class="fixed-bottom justify-content-center mb-3" v-show="canDeposit">
-      <b-button variant="primary">Support</b-button>
-    </b-row>
-    <transition name="slide-in-from-top">
-      <div v-show="openDepositForm" class="depositForm">
-
+    <transition name="slide-in-from-bottom">
+      <div v-show="isDepositFormOpening" class="form-deposit w-100 pb-4">
+        <b-container>
+          <b-row class="justify-content-end">
+            <b-link class="p-2 text-secondary" @click="openDepositForm">
+              <i class="fas fa-times"></i>
+            </b-link>
+          </b-row>
+          <b-form inline>
+            <b-input-group class="" prepend="ETH">
+              <b-form-input v-model="pledge" placeholder="0.1"></b-form-input>
+              <b-input-group-append>
+                <b-button v-if="isFilled" @click="depositInProject(project.id)" variant="primary">Send</b-button>
+                <b-button v-else disabled variant="primary">Send</b-button>
+              </b-input-group-append>
+            </b-input-group>
+          </b-form>
+        </b-container>
       </div>
     </transition>
+    <b-row class="fixed-bottom justify-content-center mb-3" v-show="canDeposit">
+      <b-button @click="openDepositForm" variant="primary">Support</b-button>
+    </b-row>
   </div>
 </template>
 
@@ -111,10 +120,15 @@ export default {
         ownerImage: null,
         ownerName: null
       },
-      openDepositForm: false,
+      isDepositFormOpening: false,
       // The amount of depositing by an user
       pledge: null,
       canDeposit: true
+    }
+  },
+  computed: {
+    isFilled () {
+      return this.pledge !== null && this.pledge !== '' ? true : false
     }
   },
   created () {
@@ -199,6 +213,7 @@ export default {
             // Check whether it is a new event or not
             if (this.project.funded === funded - pledged) {
               this.project.funded = funded
+              this.project.percent = Math.floor(funded / this.project.goal * 100)
               this.project.supporters = project.supporters
             }
           }
@@ -279,6 +294,9 @@ export default {
         }
       })
     },
+    openDepositForm () {
+      this.isDepositFormOpening = !this.isDepositFormOpening
+    },
     showError (message) {
       this.errorMessage = message
       setTimeout(() => {
@@ -303,7 +321,11 @@ export default {
   z-index: 2000;
 }
 
-.depositForm {
+.form-deposit {
+  background-color: #fff;
+  border-top: solid 1px #aaa;
+  bottom: 0;
+  left: 0;
   position: fixed;
   z-index: 2000;
 }
@@ -325,12 +347,17 @@ export default {
   height: 0.6rem;
 }
 
-.slide-in-from-top-enter-active {
+.slide-in-from-bottom-enter-active, .slide-in-from-top-enter-active {
   transition: all .3s ease;
 }
 
-.slide-in-from-top-leave-active {
+.slide-in-from-bottom-leave-active, .slide-in-from-top-leave-active {
   transition: all .3s ease;
+}
+
+.slide-in-from-bottom-enter, .slide-in-from-bottom-leave-to {
+  transform: translateY(100px);
+  opacity: 0;
 }
 
 .slide-in-from-top-enter, .slide-in-from-top-leave-to
