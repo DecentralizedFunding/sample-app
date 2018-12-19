@@ -33,8 +33,11 @@
             <b-row class="info-tag justify-content-center text-secondary" align-v="center">
               <i class="fab fa-ethereum"></i>&nbsp;Funded
             </b-row>
-            <b-row class="justify-content-center" align-v="center">
+            <b-row v-if="this.project.active" class="justify-content-center" align-v="center">
               <span class="h3">{{ project.funded }}</span>&nbsp;ETH
+            </b-row>
+            <b-row v-else class="justify-content-center" align-v="center">
+              <span class="h5" style="margin-top: 0.4rem;">END</span>
             </b-row>
           </b-col>
           <b-col>
@@ -118,7 +121,8 @@ export default {
         supporters: [],
         maker: null,
         makerImage: require('../assets/user.jpg'),
-        makerName: null
+        makerName: null,
+        active: true
       },
       isDepositFormOpening: false,
       // The amount of depositing by an user
@@ -168,11 +172,14 @@ export default {
         this.project.goal = Number(web3.utils.fromWei(web3.utils.toBN(project[2]), 'ether'))
         this.project.funded = Number(web3.utils.fromWei(web3.utils.toBN(project[3]), 'ether'))
         this.project.percent = Math.floor(this.project.funded / this.project.goal * 100)
-        this.project.date = new Date(unixTime).toLocaleDateString('ja-JP')
+        this.project.date = new Date(unixTime * 1000).toLocaleDateString('ja-JP')
         this.project.supporters = project[5]
         this.project.maker = project[6]
-        console.log(this.project.maker);
 
+        return contract.isPJActive(this.$route.params.projectId)
+      })
+      .then((active) => {
+        this.project.active = active
         this.canDeposit = this.project.maker === this.account ? false : true
         return db.collection('projects').doc(this.project.id.toString()).get()
       })
@@ -182,7 +189,7 @@ export default {
       })
       .then((url) => {
         this.project.image = url
-        return db.collection('users').where('address', '==', this.project.maker).get()
+        return db.collection('users').where('lowerCaseAddress', '==', this.project.maker).get()
       })
       .then((querySnapshot) => {
         querySnapshot.forEach((doc) => {

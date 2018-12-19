@@ -66,7 +66,7 @@ contract DFcore is Ownable, Crediential {
     emit NewPJ(_id, _title, _goal, 0, _limittime, _supportersArray);
   }
 
-  function deposit(uint _id, string _URI) public payable { // 箱にETHを投げる関数
+  function deposit(uint256 _id, string _URI) public payable { // 箱にETHを投げる関数
     require(PJs[_id].amount < PJs[_id].goal);
     require(now <= PJs[_id].limittime);
     require(msg.sender != PJToOwner[_id]);
@@ -87,7 +87,7 @@ contract DFcore is Ownable, Crediential {
     emit Deposit(PJs[_id].id, PJs[_id].amount, msg.value, PJs[_id].supportersArray);
   }
 
-  function success_withdraw(uint _id) public onlyOwnerOf(_id) {  // 箱の中が満額以上の時のみ、PJ製作者がのみが実行してお金を引き出すことができる
+  function success_withdraw(uint256 _id) public onlyOwnerOf(_id) {  // 箱の中が満額以上の時のみ、PJ製作者がのみが実行してお金を引き出すことができる
     require(PJs[_id].amount >= PJs[_id].goal);
     uint nakami = PJs[_id].amount;
     PJs[_id].amount = 0;
@@ -98,7 +98,7 @@ contract DFcore is Ownable, Crediential {
     msg.sender.transfer(nakami);
   }
 
-  function failure_withdraw(uint _id) public {  // 期限を超えて、目標額集まらなかった時に、貯めたお金を支援者に返金する
+  function failure_withdraw(uint256 _id) public {  // 期限を超えて、目標額集まらなかった時に、貯めたお金を支援者に返金する
     require(now > PJs[_id].limittime);
     require(PJs[_id].amount < PJs[_id].goal);
     PJs[_id].active = false;
@@ -128,12 +128,16 @@ contract DFcore is Ownable, Crediential {
     return (PJs[_id].id, PJs[_id].title, PJs[_id].goal, PJs[_id].amount, PJs[_id].limittime, PJs[_id].supportersArray, PJs[_id].maker);
   }
 
-  function getPJFunds(uint _id, address _address) public view returns(uint256) {
+  function getPJFunds(uint256 _id, address _address) public view returns(uint256) {
     return (PJs[_id].funds[_address]);
   }
 
   function getPJCount() public view returns(uint256) {
     return PJs.length;
+  }
+
+  function isPJActive(uint _id) public view returns(bool) {
+    return PJs[_id].active;
   }
 
 }
