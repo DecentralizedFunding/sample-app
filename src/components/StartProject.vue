@@ -179,7 +179,7 @@ export default {
           throw new Error('app/address-not-registered')
         }
 
-        return contract.makePJ(this.form.title, web3.utils.toWei(this.form.goal, 'ether'), limit.getTime())
+        return contract.makePJ(this.form.title, web3.utils.toWei(this.form.goal, 'ether'), limit.getTime() / 1000)
       })
       .then(() => {
         return contract.getPJCount()
