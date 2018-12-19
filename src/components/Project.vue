@@ -280,7 +280,10 @@ export default {
           Metadata: json
         })
       })
-      .then(() => this.pledge = null)
+      .then(() => {
+        this.pledge = null
+        this.isDepositFormOpening = false
+      })
       .catch((error) => {
         switch (error.message) {
           case 'Not registered':
