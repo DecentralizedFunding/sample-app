@@ -33,8 +33,11 @@
             <b-row class="info-tag justify-content-center text-secondary" align-v="center">
               <i class="fab fa-ethereum"></i>&nbsp;Funded
             </b-row>
-            <b-row class="justify-content-center" align-v="center">
+            <b-row v-if="this.project.active" class="justify-content-center" align-v="center">
               <span class="h3">{{ project.funded }}</span>&nbsp;ETH
+            </b-row>
+            <b-row v-else class="justify-content-center" align-v="center">
+              <span class="h5" style="margin-top: 0.4rem;">END</span>
             </b-row>
           </b-col>
           <b-col>
@@ -118,7 +121,8 @@ export default {
         supporters: [],
         maker: null,
         makerImage: require('../assets/user.jpg'),
-        makerName: null
+        makerName: null,
+        active: true
       },
       isDepositFormOpening: false,
       // The amount of depositing by an user
@@ -172,6 +176,10 @@ export default {
         this.project.supporters = project[5]
         this.project.maker = project[6]
 
+        return contract.isPJActive(this.$route.params.projectId)
+      })
+      .then((active) => {
+        this.project.active = active
         this.canDeposit = this.project.maker === this.account ? false : true
         return db.collection('projects').doc(this.project.id.toString()).get()
       })
