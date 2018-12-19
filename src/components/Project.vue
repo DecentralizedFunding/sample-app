@@ -108,7 +108,7 @@ export default {
       errorMessage: null,
       project: {
         id: null,
-        image: null,
+        image: require('../assets/loading420.jpg'),
         title: null,
         description: null,
         goal: 0,
