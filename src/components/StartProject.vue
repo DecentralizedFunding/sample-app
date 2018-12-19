@@ -18,7 +18,8 @@
           </b-input-group>
         </b-form-group>
         <b-form-group label="Time limit">
-          <b-form-input v-model="form.date" type="date" required></b-form-input>
+          <b-form-input v-model="form.date" type="date" :state="validateDate" required></b-form-input>
+          <b-form-invalid-feedback>Invalid date.</b-form-invalid-feedback>
         </b-form-group>
         <b-row class="my-2 justify-content-center" v-show="isLoading">
           <atom-spinner :animation-duration="1000" :size="60" :color="'#007bff'" />
@@ -75,7 +76,7 @@ export default {
       return typeof this.form.goal === 'number' ? true : false
     },
     validateDate () {
-      return Date.now() < this.form.date ? true : false
+      return this.form.date === null ? null : Date.now() < new Date(this.form.date) ? true : false
     }
   },
   beforeCreate () {
