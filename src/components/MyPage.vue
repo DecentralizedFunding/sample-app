@@ -2,7 +2,7 @@
   <div class="app">
     <b-container class="profile py-3">
       <b-row class="justify-content-center mt-5 mb-3">
-        <b-img class="profile_image" :src="`${db.image}`" width="96" height="96" blank-color="#bbb" alt="Icon" />
+        <b-img rounded="circle" :src="`${db.image}`" width="96" height="96" alt="Icon" />
       </b-row>
       <b-row class="justify-content-center">
         @{{ db.userName }}
@@ -92,7 +92,7 @@ export default {
       user: null,
       db: {
         address: null,
-        image: null,
+        image: require('../assets/user.jpg'),
         twitter: null,
         userName: null
       }
@@ -267,9 +267,5 @@ export default {
 
 .progress {
   height: 0.5rem;
-}
-
-.profile_image {
-  border-radius: 50%;
 }
 </style>

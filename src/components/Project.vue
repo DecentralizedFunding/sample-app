@@ -9,7 +9,7 @@
     <div class="sns-bar px-4">
       <b-row class="pb-4" align-v="end">
         <b-col class="pr-0" cols="auto">
-          <b-img class="owner-icon" width="48" height="48" :src="`${project.ownerImage}`" alt="Owner image" />
+          <b-img rounded="circle" width="48" height="48" :src="`${project.ownerImage}`" alt="Owner image" />
         </b-col>
         <b-col class="h5">
           <b-link style="color: #ddd;" :to="{ name: 'User', params: { address: project.owner }}">
@@ -117,7 +117,7 @@ export default {
         data: null,
         supporters: [],
         owner: null,
-        ownerImage: null,
+        ownerImage: require('../assets/user.jpg'),
         ownerName: null
       },
       isDepositFormOpening: false,
@@ -332,10 +332,6 @@ export default {
 
 .info-tag {
   font-size: 0.8rem;
-}
-
-.owner-icon {
-  border-radius: 50%;
 }
 
 .percent {

@@ -2,7 +2,7 @@
   <div class="app">
     <b-container class="profile py-3">
       <b-row class="justify-content-center mt-5 mb-3">
-        <b-img class="profile_image" :src="`${db.image}`" width="96" height="96" blank-color="#bbb" alt="Icon" />
+        <b-img rounded="circle" :src="`${db.image}`" width="96" height="96" alt="Icon" />
       </b-row>
       <b-row class="justify-content-center" align-v="center">
         @{{ userName }}
@@ -79,7 +79,7 @@ export default {
       credientialinfo: [],
       db: {
         address: null,
-        image: null,
+        image: require('../assets/user.jpg'),
         userName: null
       }
     }
@@ -205,9 +205,5 @@ article:hover {
 
 .project-box #title {
   font-weight: bold;
-}
-
-.profile_image {
-  border-radius: 50%;
 }
 </style>
