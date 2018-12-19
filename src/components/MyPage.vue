@@ -26,8 +26,8 @@
     <h2 class="h4 pt-4 pb-2">Your projects</h2>
     <p v-if="projects.length === 0">No Project</p>
     <div v-else class="project-box" v-for="project in projects" :key="project.id">
-      <b-link :to="{ name: 'Project', params: {projectId: project.id }}">
-        <b-card class="my-2" tag="article">
+      <b-card class="my-2" tag="article">
+        <b-link :to="{ name: 'Project', params: {projectId: project.id }}">
           <h3 class="h4">{{ project.title }}</h3>
           <b-row align-v="center">
             <b-col>
@@ -54,10 +54,10 @@
             </b-col>
             <b-col cols="auto" v-else-if="project.left.minutes < 0">Ended</b-col>
           </b-row>
-          <b-button class="w-100" v-show="isSuccess(project)" @click="withdraw(project.id)" variant="outline-success">Withdraw</b-button>
-          <b-button class="w-100" v-show="project.left.minutes < 0 && !isSuccess(project)" @click="refund(project.id)" variant="outline-warning">Refund</b-button>
-        </b-card>
-      </b-link>
+        </b-link>
+        <b-button class="mt-2 w-100" v-show="isSuccess(project)" @click="withdraw(project.id)" variant="outline-success">Withdraw</b-button>
+        <b-button class="mt-2 w-100" v-show="project.left.minutes < 0 && !isSuccess(project)" @click="refund(project.id)" variant="outline-warning">Refund</b-button>
+      </b-card>
     </div>
     <b-row class="mt-4 justify-content-center">
       <b-button @click="signOut" class="btn-outline-secondary">Log Out</b-button>
