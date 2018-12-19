@@ -18,8 +18,9 @@
       Twitter: <b-link :href="`https://twitter.com/${twitter}`">@{{ twitter }}</b-link>
     </b-alert>
     <h2 class="h4 pt-4 pb-2">Projects</h2>
-    <div class="project-box" v-for="project in projects" :key="project.id">
-      <b-link :to="{ name: 'Project', params: { projectId: project.id }}">
+    <p v-if="projects.length === 0">No Project</p>
+    <div v-else class="project-box" v-for="project in projects" :key="project.id">
+      <b-link :to="{ name: 'Project', params: {projectId: project.id }}">
         <b-card class="my-2" tag="article">
           <h3 class="h4">{{ project.title }}</h3>
           <b-row align-v="center">
@@ -49,6 +50,10 @@
           </b-row>
         </b-card>
       </b-link>
+    </div>
+    <div>
+      <p>ここでERC721参照テストをしたい</p>
+      <p>{{ credientialinfo }}</p>
     </div>
   </div>
 </template>
@@ -128,7 +133,7 @@ export default {
     DFcore.deployed()
       .then((instance) => {
         contract = instance
-        return contract.getPJByOwner(this.account)
+        return contract.getPJByOwner(this.$route.params.address)
       })
       .then((list) => {
         var promises = []
@@ -163,6 +168,39 @@ export default {
           })
         }
       })
+      .then(() => {
+        return contract.supportTokenid(this.$route.params.address)
+      })
+      .then((list) => {
+        var uripromises = []
+        list.forEach((id) => {
+          uripromises.push(contract.tokenURI(id.c[0]))
+        })
+        projectLength = uripromises.length
+        return Promise.all(uripromises)
+      })
+      .then((projects) => {
+        console.log(projects)
+        var credientials = []
+        projects.forEach((project) => {
+          console.log(project)
+          credientials.push(db.collection('nftdata').doc(project).get())
+        })
+        return Promise.all(credientials)
+      })
+      .then((result) => {
+        var credata = []
+        result.forEach((item) => {
+          credata.push(item.data())
+        })
+        return credata
+      })
+      .then((credata) => {
+        credata.forEach((data) => {
+          this.credientialinfo.push(data["Metadata"][0])
+        })
+      })
+
   },
   methods: {
   }
