@@ -9,11 +9,11 @@
     <div class="sns-bar px-4">
       <b-row class="pb-4" align-v="end">
         <b-col class="pr-0" cols="auto">
-          <b-img rounded="circle" width="48" height="48" :src="`${project.ownerImage}`" alt="Owner image" />
+          <b-img rounded="circle" width="48" height="48" :src="`${project.makerImage}`" alt="Maker image" />
         </b-col>
         <b-col class="h5">
-          <b-link style="color: #ddd;" :to="{ name: 'User', params: { address: project.owner }}">
-            @{{ project.ownerName }}
+          <b-link style="color: #ddd;" :to="{ name: 'User', params: { address: project.maker }}">
+            @{{ project.makerName }}
           </b-link>
         </b-col>
       </b-row>
@@ -116,9 +116,9 @@ export default {
         percent: 0,
         data: null,
         supporters: [],
-        owner: null,
-        ownerImage: require('../assets/user.jpg'),
-        ownerName: null
+        maker: null,
+        makerImage: require('../assets/user.jpg'),
+        makerName: null
       },
       isDepositFormOpening: false,
       // The amount of depositing by an user
@@ -170,12 +170,10 @@ export default {
         this.project.percent = Math.floor(this.project.funded / this.project.goal * 100)
         this.project.date = new Date(unixTime).toLocaleDateString('ja-JP')
         this.project.supporters = project[5]
+        this.project.maker = project[6]
+        console.log(this.project.maker);
 
-        return contract.PJToOwner(this.project.id)
-      })
-      .then((owner) => {
-        this.canDeposit = owner === this.account ? false : true
-        this.project.owner = owner
+        this.canDeposit = this.project.maker === this.account ? false : true
         return db.collection('projects').doc(this.project.id.toString()).get()
       })
       .then((doc) => {
@@ -184,20 +182,20 @@ export default {
       })
       .then((url) => {
         this.project.image = url
-        return db.collection('users').where('lowerCaseAddress', '==', this.project.owner).get()
+        return db.collection('users').where('address', '==', this.project.maker).get()
       })
       .then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
-          this.project.ownerName = doc.data().name
+          this.project.makerName = doc.data().name
         })
-        return storageRef.child(`images/users/${this.project.ownerName}`).getDownloadURL()
+        return storageRef.child(`images/users/${this.project.makerName}`).getDownloadURL()
       })
-      .then((url) => this.project.ownerImage = url)
+      .then((url) => this.project.makerImage = url)
       .catch(console.error)
 
     web3.currentProvider.publicConfigStore.on('update', (info) => {
       this.account = info.selectedAddress.toLowerCase()
-      this.canDeposit = this.project.owner === this.account ? false : true
+      this.canDeposit = this.project.maker === this.account ? false : true
     })
   },
   mounted () {
@@ -234,13 +232,13 @@ export default {
     depositInProject (id) {
       var user
       try {
-        if (this.project.owner === this.account) {
-          throw new Error('Same to owner\'s')
+        if (this.project.maker === this.account) {
+          throw new Error('Same to maker\'s')
         }
       } catch (error) {
         switch (error.message) {
-          case 'Same to owner\'s':
-            this.showError('This address is same to owner\'s.')
+          case 'Same to maker\'s':
+            this.showError('This address is same to maker\'s.')
             break
           default:
             console.error(error)
@@ -280,7 +278,10 @@ export default {
           Metadata: json
         })
       })
-      .then(() => this.pledge = null)
+      .then(() => {
+        this.pledge = null
+        this.isDepositFormOpening = false
+      })
       .catch((error) => {
         switch (error.message) {
           case 'Not registered':

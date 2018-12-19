@@ -18,14 +18,15 @@
           </b-input-group>
         </b-form-group>
         <b-form-group label="Time limit">
-          <b-form-input v-model="form.date" type="date" required></b-form-input>
+          <b-form-input v-model="form.date" type="date" :state="validateDate" required></b-form-input>
+          <b-form-invalid-feedback>Invalid date.</b-form-invalid-feedback>
         </b-form-group>
         <b-row class="my-2 justify-content-center" v-show="isLoading">
           <atom-spinner :animation-duration="1000" :size="60" :color="'#007bff'" />
         </b-row>
+        <b-alert class="my-2" v-show="errorMessage" show variant="danger">{{ errorMessage }}</b-alert>
         <b-button class="w-100 mt-2" v-if="isFormFilled" @click="startProject" type="submit" variant="primary">Start</b-button>
         <b-button class="w-100 mt-2" v-else variant="secondary" disabled>Start</b-button>
-        <b-alert class="my-2" v-show="errorMessage" show variant="danger">{{ errorMessage }}</b-alert>
       </b-form>
     </b-card>
   </div>
@@ -75,7 +76,7 @@ export default {
       return typeof this.form.goal === 'number' ? true : false
     },
     validateDate () {
-      return Date.now() < this.form.date ? true : false
+      return this.form.date === null ? null : Date.now() < new Date(this.form.date) ? true : false
     }
   },
   beforeCreate () {
@@ -178,7 +179,7 @@ export default {
           throw new Error('app/address-not-registered')
         }
 
-        return contract.makePJ(this.form.title, web3.utils.toWei(this.form.goal, 'ether'), limit.getTime())
+        return contract.makePJ(this.form.title, web3.utils.toWei(this.form.goal, 'ether'), limit.getTime() / 1000)
       })
       .then(() => {
         return contract.getPJCount()
@@ -209,6 +210,7 @@ export default {
         this.$router.replace({ name: 'Project', params: { projectId: projectId }})
       })
       .catch((error) => {
+        this.isLoading = false
         switch (error.message) {
           case 'app/address-not-registered':
             this.errorMessage = 'Connected wallet address is not registered.'

@@ -54,10 +54,8 @@
             </b-col>
             <b-col cols="auto" v-else-if="project.left.minutes < 0">Ended</b-col>
           </b-row>
-          <div class="mt-2" v-show="project.left.minutes < 0">
-            <b-button class="w-100" v-if="isSuccess(project)" @click="withdraw(project.id)" variant="outline-success">Withdraw</b-button>
-            <b-button class="w-100" v-else @click="refund(project.id)" variant="outline-warning">Refund</b-button>
-          </div>
+          <b-button class="w-100" v-show="isSuccess(project)" @click="withdraw(project.id)" variant="outline-success">Withdraw</b-button>
+          <b-button class="w-100" v-show="project.left.minutes < 0 && !isSuccess(project)" @click="refund(project.id)" variant="outline-warning">Refund</b-button>
         </b-card>
       </b-link>
     </div>
@@ -199,6 +197,7 @@ export default {
         .catch(console.error)
     },
     isSuccess (project) {
+      console.log(project.funded >= project.goal);
       return project.funded >= project.goal ? true : false
     },
     refund (id) {
