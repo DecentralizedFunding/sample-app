@@ -4,7 +4,7 @@
       <h2 class="h3">Start a Project</h2>
       <b-form @submit="onSubmit">
         <b-form-group label="Image">
-          <b-form-file v-model="form.image" accept=".jpg, .png" placeholder="JPG or PNG" required></b-form-file>
+          <b-form-file v-model="form.imageFile" accept=".jpg, .png" placeholder="JPG or PNG" required></b-form-file>
         </b-form-group>
         <b-form-group label="Title">
           <b-form-input v-model="form.title" type="text" placeholder="Purpose" required></b-form-input>
@@ -53,7 +53,7 @@ export default {
       account: null,
       uid: null,
       form: {
-        image: null,
+        imageFile: null,
         title: null,
         content: null,
         goal: null,
@@ -68,7 +68,7 @@ export default {
   },
   computed: {
     isFormFilled () {
-      return (this.form.image !== null && this.form.title !== null && this.form.content !== null && this.form.goal !== null && this.form.date !== null) ? true : false
+      return (this.form.imageFile !== null && this.form.title !== null && this.form.content !== null && this.form.goal !== null && this.form.date !== null) ? true : false
     },
     isNumber () {
       console.log(typeof this.form.goal);
@@ -108,6 +108,14 @@ export default {
       this.account = info.selectedAddress.toLowerCase()
     })
   },
+  /*
+  updated () {
+    var reader = new FileReader()
+    reader.onload = (e) => {
+      this.previewImage = e.target.result
+    }
+    reader.readAsDataURL(this.imageFile)
+  },*/
   /*
   mounted () {
     DFcore.deployed()
@@ -190,7 +198,7 @@ export default {
             throw new Error('This type of image is not adapted')
         }*/
         var newImageRef = storageRef.child(`images/projects/${projectId}`)
-        return newImageRef.put(this.form.image)
+        return newImageRef.put(this.form.imageFile)
       })
       .then(() => {
         return db.collection('projects').doc(projectId.toString())
