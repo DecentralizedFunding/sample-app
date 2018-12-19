@@ -42,6 +42,8 @@ contract DFcore is Ownable, Crediential {
     uint amount;
     uint limittime;
     address[] supportersArray;
+    address maker;
+    bool active;
     mapping (address => uint) funds;  //支援者の誰がどれだけ投げてくれたのかを記録しておく
   }
 
@@ -58,7 +60,7 @@ contract DFcore is Ownable, Crediential {
     require(now <= _limittime);
     address[] memory _supportersArray;
     uint _id = PJs.length;
-    PJs.push(PJ(_id, _title, _goal, 0, _limittime, _supportersArray));
+    PJs.push(PJ(_id, _title, _goal, 0, _limittime, _supportersArray, msg.sender, true));
     PJToOwner[_id] = msg.sender;
     ownerPJCount[msg.sender]++;
     emit NewPJ(_id, _title, _goal, 0, _limittime, _supportersArray);
@@ -92,12 +94,16 @@ contract DFcore is Ownable, Crediential {
     ownerPJCount[PJToOwner[_id]]--;
     PJToOwner[_id] = owner(); //ownerはコントラクト作成者
     ownerPJCount[owner()]++;
+    PJs[_id].active = false;
     msg.sender.transfer(nakami);
   }
 
   function failure_withdraw(uint _id) public {  // 期限を超えて、目標額集まらなかった時に、貯めたお金を支援者に返金する
     require(now > PJs[_id].limittime);
     require(PJs[_id].amount < PJs[_id].goal);
+    PJs[_id].active = false;
+    PJToOwner[_id] = owner(); //ownerはコントラクト作成者
+    ownerPJCount[owner()]++;
     for (uint i = 0; i < PJs[_id].supportersArray.length; i++) {
       address supporteraddress = PJs[_id].supportersArray[i];
       uint siengaku = PJs[_id].funds[supporteraddress];
