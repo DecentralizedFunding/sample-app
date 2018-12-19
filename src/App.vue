@@ -10,7 +10,7 @@
         </b-link>
         <b-link v-if="!isLoggedIn" :to="{ name: 'Login' }">Log in</b-link>
         <b-link v-else :to="{ name: 'MyPage' }">
-          <i class="fas fa-user fa-lg"></i>
+          <b-img class="profile_image" :src="`${image}`" width="36" height="36" alt="Icon" />
         </b-link>
       </div>
     </div>
@@ -28,6 +28,7 @@ export default {
   name: 'App',
   data () {
     return {
+      image: null,
       isLoggedIn: false
     }
   },
@@ -35,6 +36,7 @@ export default {
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
         this.isLoggedIn = true
+        this.image = user.photoURL
       }
     })
   }
@@ -49,6 +51,10 @@ export default {
 .menu-button, .menu-button:hover {
   color: #bbb;
   margin-top: 2px;
+}
+
+.profile_image {
+  border-radius: 50%;
 }
 
 .top-bar {

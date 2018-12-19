@@ -2,7 +2,7 @@
   <div class="app">
     <b-container class="profile py-3">
       <b-row class="justify-content-center mt-5 mb-3">
-        <b-img class="profile_image" :src="`${db.image}`" width="96" height="96" blank-color="#bbb" alt="Icon" />
+        <b-img rounded="circle" :src="`${db.image}`" width="96" height="96" alt="Icon" />
       </b-row>
       <b-row class="justify-content-center" align-v="center">
         @{{ userName }}
@@ -14,8 +14,8 @@
       </b-row>
     </b-container>
     <b-alert class="my-2" show variant="primary">
-      <p class="font-weight-bold">Authenticated Account.</p>
-      Twitter:<b-link :href="`https://twitter.com/${twitter}`">@{{ twitter }}</b-link>
+      <p class="font-weight-bold mb-0">Authenticated Account.</p>
+      Twitter: <b-link :href="`https://twitter.com/${twitter}`">@{{ twitter }}</b-link>
     </b-alert>
     <h2 class="h4 pt-4 pb-2">Projects</h2>
     <p v-if="projects.length === 0">No Project</p>
@@ -55,7 +55,6 @@
       <p>ここでERC721参照テストをしたい</p>
       <p>{{ credientialinfo }}</p>
     </div>
-    <b-link :to="{ name: 'TopPage' }">トップへ戻る</b-link>
   </div>
 </template>
 
@@ -85,7 +84,7 @@ export default {
       credientialinfo: [],
       db: {
         address: null,
-        image: null,
+        image: require('../assets/user.jpg'),
         userName: null
       }
     }
@@ -109,10 +108,7 @@ export default {
       .then((accounts) => this.account = accounts[0])
       .catch(console.log)
 
-    DFcore.deployed()
-      .then((instance) => this.contractAddress = instance.address)
-
-    db.collection('users').where('address', '==', this.$route.params.address)
+    db.collection('users').where('lowerCaseAddress', '==', this.$route.params.address)
       .get()
       .then((querySnapshot) => {
         if (!querySnapshot.empty) {
@@ -161,6 +157,7 @@ export default {
             'title': projects[i][1],
             'goal': Number(goal),
             'funded': Number(funded),
+            'percent': Math.floor(Number(funded) / Number(goal) * 100),
             'limitTime': date.toLocaleDateString('ja-JP'),
             'supporters': projects[i][5],
             'left': {
@@ -212,7 +209,6 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-
 article:hover {
   box-shadow: 0 0 2px 0 #007bff;
 }
@@ -247,9 +243,5 @@ article:hover {
 
 .project-box #title {
   font-weight: bold;
-}
-
-.profile_image {
-  border-radius: 50%;
 }
 </style>
