@@ -202,7 +202,7 @@ export default {
     refund (id) {
       DFcore.deployed()
         .then((instance) => {
-          instance.failure_withdraw(id)
+          instance.failure_withdraw(id, {gas: 300000})
         })
     },
     reSendEmailVerification () {
@@ -218,7 +218,7 @@ export default {
     withdraw (id) {
       DFcore.deployed()
         .then((instance) => {
-          instance.success_withdraw(id)
+          instance.success_withdraw(id, {gas: 300000})
         })
     }
   }
