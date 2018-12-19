@@ -18,7 +18,7 @@
       Twitter: <b-link :href="`https://twitter.com/${twitter}`">@{{ twitter }}</b-link>
     </b-alert>
     <h2 class="h4 pt-4 pb-2">Projects</h2>
-    <p v-if="projects.length === 0">No Project</p>
+    <p class="text-center" v-if="projects.length === 0">No Project</p>
     <div v-else class="project-box" v-for="project in projects" :key="project.id">
       <b-link :to="{ name: 'Project', params: {projectId: project.id }}">
         <b-card class="my-2" tag="article">
@@ -51,9 +51,17 @@
         </b-card>
       </b-link>
     </div>
-    <div>
-      <p>ここでERC721参照テストをしたい</p>
-      <p>{{ credientialinfo }}</p>
+    <h2 class="h4 pt-4 pb-2">Credientials</h2>
+    <p class="text-center" v-if="credientialinfo.length === 0">No Project</p>
+    <div v-else v-for="crediential in credientialinfo">
+      <b-link :to="{ name: 'Project', params: { projectId: crediential['id'] }}">
+        <b-card>
+          <b-container>
+            <b-row align-v="center">
+              <i class="fab fa-ethereum"></i>&nbsp;{{ crediential['pledge'] / 10**18 }} ETH</b-row>
+          </b-container>
+        </b-card>
+      </b-link>
     </div>
   </div>
 </template>
@@ -103,10 +111,6 @@ export default {
 
     web3.eth.getCoinbase()
       .then((coinbase) => DFcore.defaults({from: coinbase}))
-
-    web3.eth.getAccounts()
-      .then((accounts) => this.account = accounts[0])
-      .catch(console.log)
 
     db.collection('users').where('lowerCaseAddress', '==', this.$route.params.address)
       .get()
@@ -180,10 +184,8 @@ export default {
         return Promise.all(uripromises)
       })
       .then((projects) => {
-        console.log(projects)
         var credientials = []
         projects.forEach((project) => {
-          console.log(project)
           credientials.push(db.collection('nftdata').doc(project).get())
         })
         return Promise.all(credientials)
@@ -200,7 +202,6 @@ export default {
           this.credientialinfo.push(data["Metadata"][0])
         })
       })
-
   },
   methods: {
   }
@@ -218,6 +219,11 @@ article:hover {
   text-overflow: ellipsis;
   width: 192px;
   white-space: nowrap;
+}
+
+.crediential * {
+  color: inherit;
+  text-decoration: none;
 }
 
 .profile {
