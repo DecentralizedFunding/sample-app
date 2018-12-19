@@ -24,9 +24,9 @@
         <b-row class="my-2 justify-content-center" v-show="isLoading">
           <atom-spinner :animation-duration="1000" :size="60" :color="'#007bff'" />
         </b-row>
+        <b-alert class="my-2" v-show="errorMessage" show variant="danger">{{ errorMessage }}</b-alert>
         <b-button class="w-100 mt-2" v-if="isFormFilled" @click="startProject" type="submit" variant="primary">Start</b-button>
         <b-button class="w-100 mt-2" v-else variant="secondary" disabled>Start</b-button>
-        <b-alert class="my-2" v-show="errorMessage" show variant="danger">{{ errorMessage }}</b-alert>
       </b-form>
     </b-card>
   </div>
@@ -210,6 +210,7 @@ export default {
         this.$router.replace({ name: 'Project', params: { projectId: projectId }})
       })
       .catch((error) => {
+        this.isLoading = false
         switch (error.message) {
           case 'app/address-not-registered':
             this.errorMessage = 'Connected wallet address is not registered.'
