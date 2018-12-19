@@ -11,7 +11,7 @@
         <span class="address" id="address">
           {{ db.address }}
         </span>
-        <b-link @click="copyAddress" v-b-popover="'Copy!'">
+        <b-link class="text-dark" @click="copyAddress" v-b-popover="'Copy!'">
           <i class="fas fa-copy"></i>
         </b-link>
       </b-row>
