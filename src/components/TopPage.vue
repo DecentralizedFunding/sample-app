@@ -10,7 +10,7 @@
       <b-link :to="{ name: 'Project', params: { projectId: project.id }}">
         <b-card class="my-3" :img-src="`${project.image}`" img-alt="Image" img-top tag="article">
           <h2 class="h4">{{ project.title }}</h2>
-          <b-row align-v="center">
+          <b-row v-show="project.active" align-v="center">
             <b-col>
               <b-progress class="mb-1" :value="project.funded" :max="project.goal"></b-progress>
             </b-col>
@@ -21,19 +21,19 @@
               <i class="fas fa-flag-checkered"></i>
               {{ project.goal }} ETH
             </b-col>
-            <b-col cols="auto" v-if="project.left.days > 1">
+            <b-col cols="auto" v-if="project.active && project.left.days > 1">
               <i class="far fa-clock"></i>
               {{ project.left.days }} days left
             </b-col>
-            <b-col cols="auto" v-else-if="project.left.hours > 1">
+            <b-col cols="auto" v-else-if="project.active && project.left.hours > 1">
               <i class="far fa-clock"></i>
               {{ project.left.hours }} hours left
             </b-col>
-            <b-col cols="auto" v-else-if="project.left.mitunes >= 0">
+            <b-col cols="auto" v-else-if="project.active && project.left.mitunes >= 0">
               <i class="far fa-clock"></i>
               {{ project.left.mitunes }} mitunes left
             </b-col>
-            <b-col cols="auto" v-else-if="project.left.minutes < 0">Ended</b-col>
+            <b-col cols="auto" v-else-if="!project.active || project.left.minutes < 0">Ended</b-col>
           </b-row>
         </b-card>
       </b-link>
@@ -109,6 +109,7 @@ export default {
     var contract
     var projectLength
     var urls
+    var statuses
     DFcore.deployed()
       .then((instance) => {
         contract = instance
@@ -125,7 +126,17 @@ export default {
       .then((response) => {
         urls = response
       })
-      .then((count) => {
+      .then(() => {
+        var promises = []
+        for (var i = 0; i < projectLength; i++) {
+          promises.push(contract.isPJActive(i))
+        }
+        return Promise.all(promises)
+      })
+      .then((results) => {
+        statuses = results
+      })
+      .then(() => {
         var promises = []
         for (var i = 0; i < projectLength; i++) {
           promises.push(contract.getPJInfo(i))
@@ -138,8 +149,8 @@ export default {
           var goal = web3.utils.fromWei(web3.utils.toBN(projects[i][2]), 'ether')
           var funded = web3.utils.fromWei(web3.utils.toBN(projects[i][3]), 'ether')
           var unixTime = projects[i][4].toNumber()
-          var date = new Date(unixTime)
-          var left = unixTime - Date.now()
+          var date = new Date(unixTime * 1000)
+          var left = unixTime * 1000 - Date.now()
 
           this.projects.unshift({
             'id': projects[i][0].toNumber(),
@@ -150,6 +161,7 @@ export default {
             'percent': Math.floor(Number(funded) / Number(goal) * 100),
             'limitTime': date.toLocaleDateString('ja-JP'),
             'supporters': projects[i][5],
+            'active': statuses[i],
             'left': {
               'days': Math.floor(left / (24 * 60 * 60 * 1000)),
               'hours': Math.floor(left / (60 * 60 * 1000)),

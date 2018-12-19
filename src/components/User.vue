@@ -55,10 +55,12 @@
     <p class="text-center" v-if="credientialinfo.length === 0">No Project</p>
     <div v-else v-for="crediential in credientialinfo">
       <b-link :to="{ name: 'Project', params: { projectId: crediential['id'] }}">
-        <b-card>
+        <b-card class="mb-2">
           <b-container>
             <b-row align-v="center">
-              <i class="fab fa-ethereum"></i>&nbsp;{{ crediential['pledge'] / 10**18 }} ETH</b-row>
+              <b-col>Project {{ crediential['id'] }}</b-col>
+              <b-col><i class="fab fa-ethereum"></i>&nbsp;{{ crediential['pledge'] / 10**18 }} ETH</b-col>
+            </b-row>
           </b-container>
         </b-card>
       </b-link>
@@ -195,7 +197,7 @@ export default {
         result.forEach((item) => {
           credata.push(item.data())
         })
-        return credata
+        return Promise.all(credata)
       })
       .then((credata) => {
         credata.forEach((data) => {

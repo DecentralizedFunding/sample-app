@@ -22,7 +22,7 @@
       <b-card>
         <h2 class="h3">{{ project.title }}</h2>
         <p>{{ project.description }}</p>
-        <b-row align-v="center">
+        <b-row v-show="project.active" align-v="center">
           <b-col>
             <b-progress class="mb-1" :value="project.funded" :max="project.goal"></b-progress>
           </b-col>

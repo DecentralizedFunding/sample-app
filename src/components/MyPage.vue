@@ -29,7 +29,7 @@
       <b-card class="my-2" tag="article">
         <b-link :to="{ name: 'Project', params: {projectId: project.id }}">
           <h3 class="h4">{{ project.title }}</h3>
-          <b-row align-v="center">
+          <b-row v-show="project.active" align-v="center">
             <b-col>
               <b-progress class="mb-1" :value="project.funded" :max="project.goal"></b-progress>
             </b-col>
@@ -156,6 +156,7 @@ export default {
     getCreatedProject () {
       var contract
       var projectLength
+      var projects
       DFcore.deployed()
         .then((instance) => {
           contract = instance
@@ -169,14 +170,22 @@ export default {
           projectLength = promises.length
           return Promise.all(promises)
         })
-        .then((projects) => {
+        .then((results) => {
+          projects = results
+          var promises = []
+          for (var i = 0; i < projectLength; i++) {
+            promises.push(contract.isPJActive(i))
+          }
+          return Promise.all(promises)
+        })
+        .then((statuses) => {
           for (var i = 0; i < projectLength; i++) {
             // 1e21 対策
             var goal = web3.utils.fromWei(web3.utils.toBN(projects[i][2]), 'ether')
             var funded = web3.utils.fromWei(web3.utils.toBN(projects[i][3]), 'ether')
             var unixTime = projects[i][4].toNumber()
-            var date = new Date(unixTime)
-            var left = unixTime - Date.now()
+            var date = new Date(unixTime * 1000)
+            var left = unixTime * 1000 - Date.now()
 
             this.projects.unshift({
               'id': projects[i][0].toNumber(),
@@ -186,6 +195,7 @@ export default {
               'percent': Math.floor(Number(funded) / Number(goal) * 100),
               'limitTime': date.toLocaleDateString('ja-JP'),
               'supporters': projects[i][5],
+              'active': statuses[i],
               'left': {
                 'days': Math.floor(left / (24 * 60 * 60 * 1000)),
                 'hours': Math.floor(left / (60 * 60 * 1000)),
@@ -202,7 +212,7 @@ export default {
     refund (id) {
       DFcore.deployed()
         .then((instance) => {
-          instance.failure_withdraw(id)
+          instance.failure_withdraw(id, {gas: 300000})
         })
     },
     reSendEmailVerification () {
@@ -218,7 +228,7 @@ export default {
     withdraw (id) {
       DFcore.deployed()
         .then((instance) => {
-          instance.success_withdraw(id)
+          instance.success_withdraw(id, {gas: 300000})
         })
     }
   }
