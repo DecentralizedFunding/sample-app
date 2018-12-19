@@ -197,7 +197,6 @@ export default {
         .catch(console.error)
     },
     isSuccess (project) {
-      console.log(project.funded >= project.goal);
       return project.funded >= project.goal ? true : false
     },
     refund (id) {
