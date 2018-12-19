@@ -42,6 +42,7 @@ contract DFcore is Ownable, Crediential {
     uint amount;
     uint limittime;
     address[] supportersArray;
+    address maker;
     mapping (address => uint) funds;  //支援者の誰がどれだけ投げてくれたのかを記録しておく
   }
 
@@ -58,7 +59,7 @@ contract DFcore is Ownable, Crediential {
     require(now <= _limittime);
     address[] memory _supportersArray;
     uint _id = PJs.length;
-    PJs.push(PJ(_id, _title, _goal, 0, _limittime, _supportersArray));
+    PJs.push(PJ(_id, _title, _goal, 0, _limittime, _supportersArray, msg.sender));
     PJToOwner[_id] = msg.sender;
     ownerPJCount[msg.sender]++;
     emit NewPJ(_id, _title, _goal, 0, _limittime, _supportersArray);
