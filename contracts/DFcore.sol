@@ -124,7 +124,7 @@ contract DFcore is Ownable, Crediential {
     return result;
   }
 
-  function getPJInfo(uint _id) public view returns(uint256, string, uint256, uint256, uint256, address[]) {
+  function getPJInfo(uint _id) public view returns(uint256, string, uint256, uint256, uint256, address[], address) {
     return (PJs[_id].id, PJs[_id].title, PJs[_id].goal, PJs[_id].amount, PJs[_id].limittime, PJs[_id].supportersArray, PJs[_id].maker);
   }
 
